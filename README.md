@@ -36,6 +36,49 @@ Output JARs will be in:
 - `fabric/build/libs/dynamickeybinds-fabric-*.jar`
 - `forge/build/libs/dynamickeybinds-forge-*.jar`
 
+## Using with JitPack
+
+This repository is configured for JitPack via `jitpack.yml` (Java 17 + Gradle publish to local Maven).
+
+### 1) Create a Git tag and push
+
+```bash
+git tag v0.0.1
+git push origin v0.0.1
+```
+
+### 2) Add JitPack repository in the consuming project
+
+```gradle
+repositories {
+  mavenCentral()
+  maven { url 'https://jitpack.io' }
+}
+```
+
+### 3) Add dependency
+
+Because this is a multi-module project, depend on a module artifact:
+
+```gradle
+dependencies {
+  // API/common module
+  implementation "com.github.<GitHubUser>.DynamicKeybinds:common:v0.0.1"
+
+  // Loader-specific modules (if needed directly)
+  // implementation "com.github.<GitHubUser>.DynamicKeybinds:fabric:v0.0.1"
+  // implementation "com.github.<GitHubUser>.DynamicKeybinds:forge:v0.0.1"
+}
+```
+
+Replace `<GitHubUser>` with your GitHub username or org and `v0.0.1` with your tag.
+
+If you are unsure of the exact coordinate JitPack generated, open:
+
+`https://jitpack.io/#<GitHubUser>/DynamicKeybinds/<tag>`
+
+JitPack will show the exact dependency snippet after the build finishes.
+
 ## Publishing (Modrinth + CurseForge)
 
 This project includes publish tasks for both platforms in both loaders.
