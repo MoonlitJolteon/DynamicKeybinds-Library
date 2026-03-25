@@ -1,0 +1,163 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "com.modrinth.minotaur" version "2.+"
+    id "com.matthewprenger.cursegradle" version "1.4.0"
+}
+
+archivesBaseName = getArtifactId("fabric")
+
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+loom {
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+}
+
+configurations {
+    common
+    shadowCommon
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentFabric.extendsFrom common
+}
+
+repositories {
+    maven { url = 'https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1' }
+}
+
+dependencies {
+    modImplementation "net.fabricmc:fabric-loader:${project.fabricLoaderVersion}"
+    modApi "net.fabricmc.fabric-api:fabric-api:${project.fabricApiVersion}"
+    modApi("dev.architectury:architectury-fabric:${project.architecturyVersion}") {
+        exclude group: "net.fabricmc", module: "fabric-loader"
+    }
+
+    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+
+    // For full online-mode testing
+    modRuntimeOnly 'me.djtheredstoner:DevAuth-fabric:1.2.1'
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+shadowJar {
+    exclude "architectury.common.json"
+    configurations = [project.configurations.shadowCommon]
+    archiveClassifier.set "dev-shadow"
+}
+
+remapJar {
+    injectAccessWidener = true
+    input.set shadowJar.archiveFile
+    dependsOn shadowJar
+    archiveClassifier.set null
+}
+
+jar {
+    archiveClassifier.set "dev"
+}
+
+sourcesJar {
+    def commonSources = project(":common").sourcesJar
+    dependsOn commonSources
+    from commonSources.archiveFile.map { zipTree(it) }
+}
+
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+publishing {
+    publications {
+        mavenFabric(MavenPublication) {
+            artifactId = project.archivesBaseName + "-" + project.name
+            from components.java
+        }
+    }
+
+    repositories {
+    }
+}
+
+def modrinthToken = ((project.findProperty("modrinthApiToken") ?: System.getenv("MODRINTH_TOKEN")) ?: "").toString()
+def curseforgeToken = ((project.findProperty("curseforgeApiToken") ?: System.getenv("CURSEFORGE_TOKEN")) ?: "").toString()
+def modrinthProjectId = (project.findProperty("modrinthProjectId") ?: "").toString()
+def curseforgeProjectId = (project.findProperty("curseforgeProjectId") ?: "").toString()
+def releaseType = (project.findProperty("releaseType") ?: "release").toString()
+def changelogText = (project.findProperty("changelog") ?: "No changelog provided.").toString()
+
+if (!modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBlank()) {
+    modrinth {
+        token = modrinthToken
+        projectId = modrinthProjectId
+        versionNumber = project.version.toString()
+        versionName = "${project.modID} ${project.version} [Fabric]"
+        versionType = releaseType
+        uploadFile = remapJar
+        gameVersions = [project.minecraftVersion]
+        loaders = ["fabric"]
+    }
+}
+
+if (!curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToken.isBlank()) {
+    curseforge {
+        apiKey = curseforgeToken
+        project {
+            id = curseforgeProjectId
+            changelog = changelogText
+            changelogType = "markdown"
+            releaseType = releaseType
+            addGameVersion project.minecraftVersion
+            addGameVersion "Fabric"
+            mainArtifact(remapJar.archiveFile.get().asFile) {
+                displayName = "${project.modID} ${project.version} [Fabric]"
+            }
+        }
+        options {
+            forgeGradleIntegration = false
+        }
+    }
+}
+
+tasks.named("modrinth").configure {
+    dependsOn remapJar
+    onlyIf {
+        !modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBlank()
+    }
+}
+
+tasks.named("curseforge").configure {
+    dependsOn remapJar
+    onlyIf {
+        !curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToken.isBlank()
+    }
+}
+
+tasks.register("publishToModrinth") {
+    group = "publishing"
+    description = "Uploads the Fabric artifact to Modrinth."
+    dependsOn tasks.named("modrinth")
+}
+
+tasks.register("publishToCurseForge") {
+    group = "publishing"
+    description = "Uploads the Fabric artifact to CurseForge."
+    dependsOn tasks.named("curseforge")
+}
+
+tasks.register("publishToPlatforms") {
+    group = "publishing"
+    description = "Uploads the Fabric artifact to Modrinth and CurseForge."
+    dependsOn tasks.named("publishToModrinth"), tasks.named("publishToCurseForge")
+}

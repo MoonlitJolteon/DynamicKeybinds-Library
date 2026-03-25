@@ -1,0 +1,27 @@
+archivesBaseName = getArtifactId("common")
+
+architectury {
+    common(project.enabledPlatforms.split(","))
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/dynamickeybinds.accesswidener")
+}
+
+dependencies {
+    modImplementation "net.fabricmc:fabric-loader:${project.fabricLoaderVersion}"
+    modApi "dev.architectury:architectury:${project.architecturyVersion}"
+    implementation "com.google.code.findbugs:jsr305:3.0.2"
+}
+
+publishing {
+    publications {
+        mavenCommon(MavenPublication) {
+            artifactId = project.archivesBaseName
+            from components.java
+        }
+    }
+
+    repositories {
+    }
+}

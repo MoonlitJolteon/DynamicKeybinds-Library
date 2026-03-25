@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "dynamickeybinds",
+  "version": "${version}",
+  "name": "Dynamic Keybinds",
+  "description": "DynamicKeybinds lets mods create, sync, and persist custom runtime keybinds tied to the world, not the client.",
+  "authors": [
+    "Moonlit Productions"
+  ],
+  "contact": {
+    "repo": "https://github.com/munebase/dynamickeybinds"
+  },
+  "license": "MIT",
+  "entrypoints": {
+    "main": [
+      "dev.munebase.dynamickeybinds.fabric.FabricCommonInitializer"
+    ],
+    "client": [
+      "dev.munebase.dynamickeybinds.fabric.FabricDynamicKeyInitializer"
+    ]
+  },
+  "mixins": [
+    "dynamickeybinds.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "fabric-api": "*",
+    "minecraft": "1.20.1"
+  }
+}

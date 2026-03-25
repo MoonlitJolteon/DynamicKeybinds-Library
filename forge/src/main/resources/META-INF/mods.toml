@@ -1,0 +1,26 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "dynamickeybinds"
+version = "${version}"
+displayName = "Dynamic Keybinds"
+authors = "Moonlit Productions"
+description = '''
+DynamicKeybinds lets mods create, sync, and persist custom runtime keybinds tied to the world, not the client.
+'''
+
+[[dependencies.dynamickeybinds]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.dynamickeybinds]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.20.2)"
+ordering = "NONE"
+side = "BOTH"

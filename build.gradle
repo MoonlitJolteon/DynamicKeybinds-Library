@@ -1,0 +1,74 @@
+plugins {
+    id "architectury-plugin" version "3.4.+"
+    id "dev.architectury.loom" version "1.9.+" apply false
+}
+
+architectury {
+    minecraft = project.minecraftVersion
+}
+
+subprojects {
+    apply plugin: "dev.architectury.loom"
+
+    loom {
+        silentMojangMappingsLicense()
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${project.minecraftVersion}"
+        mappings loom.officialMojangMappings()
+
+        annotationProcessor "org.ow2.asm:asm:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-analysis:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-commons:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-tree:${project.asmVersion}"
+        annotationProcessor "org.ow2.asm:asm-util:${project.asmVersion}"
+    }
+}
+
+allprojects {
+    apply plugin: "java"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+
+    version = project.modVersion
+    group = project.mavenGroup
+
+    repositories {
+        mavenCentral()
+        maven { url "https://maven.fabricmc.net/" }
+        maven { url "https://maven.architectury.dev/" }
+        maven { url "https://maven.minecraftforge.net/" }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+        options.release = 17
+    }
+
+    java {
+        java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+        withSourcesJar()
+    }
+
+    sourcesJar {
+        duplicatesStrategy 'exclude'
+    }
+
+    tasks.withType(GenerateModuleMetadata) {
+        enabled = false
+    }
+}
+
+ext.getArtifactId = { platform ->
+    return "$modID-$platform-$minecraftVersion"
+}
+
+tasks.register("publishAllPlatforms") {
+    group = "publishing"
+    description = "Uploads Fabric and Forge artifacts to Modrinth and CurseForge."
+    dependsOn(
+        ":fabric:publishToPlatforms",
+        ":forge:publishToPlatforms"
+    )
+}
