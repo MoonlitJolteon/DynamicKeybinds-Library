@@ -1,6 +1,9 @@
 package dev.munebase.dynamickeybinds.fabric.network;
 
 import dev.munebase.dynamickeybinds.network.SyncKeybindsPacket;
+import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.fabric.FabricKeybindPersistence;
+import dev.munebase.dynamickeybinds.fabric.server.FabricServerKeybindHandler;
 import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
 import dev.munebase.dynamickeybinds.network.CommonPacketCodec;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
@@ -43,7 +46,7 @@ public final class FabricNetworking {
                 SyncKeybindsPacket packet = decodeSyncKeybinds(buf);
                 client.execute(() -> {
                     try {
-                        dev.munebase.dynamickeybinds.fabric.FabricKeybindPersistence.handleServerSync(packet.getKeybinds());
+                        FabricKeybindPersistence.handleServerSync(packet.getKeybinds());
                     } catch (Exception e) {
                         LOGGER.error("Error handling sync packet", e);
                     }
@@ -64,7 +67,7 @@ public final class FabricNetworking {
                 AddKeybindPacket packet = decodeAddKeybind(buf);
                 server.submit(() -> {
                     try {
-                        dev.munebase.dynamickeybinds.fabric.server.FabricServerKeybindHandler.handleAddKeybind(player, packet);
+                        FabricServerKeybindHandler.handleAddKeybind(player, packet);
                     } catch (Exception e) {
                         LOGGER.error("Error handling add keybind packet", e);
                     }
@@ -80,7 +83,7 @@ public final class FabricNetworking {
                 RemoveKeybindPacket packet = decodeRemoveKeybind(buf);
                 server.submit(() -> {
                     try {
-                        dev.munebase.dynamickeybinds.fabric.server.FabricServerKeybindHandler.handleRemoveKeybind(player, packet);
+                        FabricServerKeybindHandler.handleRemoveKeybind(player, packet);
                     } catch (Exception e) {
                         LOGGER.error("Error handling remove keybind packet", e);
                     }
@@ -95,7 +98,7 @@ public final class FabricNetworking {
                 UpdateKeybindPacket packet = decodeUpdateKeybind(buf);
                 server.submit(() -> {
                     try {
-                        dev.munebase.dynamickeybinds.fabric.server.FabricServerKeybindHandler.handleUpdateKeybind(player, packet);
+                        FabricServerKeybindHandler.handleUpdateKeybind(player, packet);
                     } catch (Exception e) {
                         LOGGER.error("Error handling update keybind packet", e);
                     }
@@ -109,7 +112,7 @@ public final class FabricNetworking {
     /**
      * Sends a client add-keybind request packet.
      */
-    public static void sendAddKeybindToServer(String id, int keyCode, String category, Optional<dev.munebase.dynamickeybinds.action.DynamicKeybindAction> action) {
+    public static void sendAddKeybindToServer(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
         try {
             FriendlyByteBuf buf = new FriendlyByteBuf(buffer());
             CommonPacketCodec.encodeAddKeybind(new AddKeybindPacket(id, keyCode, category, action), buf);

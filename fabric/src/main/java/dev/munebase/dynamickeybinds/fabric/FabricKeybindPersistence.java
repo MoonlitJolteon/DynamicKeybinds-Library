@@ -1,6 +1,7 @@
 package dev.munebase.dynamickeybinds.fabric;
 
 import dev.munebase.dynamickeybinds.client.CommonClientKeybindPersistence;
+import dev.munebase.dynamickeybinds.fabric.network.FabricNetworking;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ public final class FabricKeybindPersistence {
     private static final CommonClientKeybindPersistence COMMON = new CommonClientKeybindPersistence(
         LOGGER,
         "Fabric",
-        dev.munebase.dynamickeybinds.fabric.network.FabricNetworking::sendUpdateKeybindToServer
+        FabricNetworking::sendUpdateKeybindToServer
     );
 
     private FabricKeybindPersistence() {

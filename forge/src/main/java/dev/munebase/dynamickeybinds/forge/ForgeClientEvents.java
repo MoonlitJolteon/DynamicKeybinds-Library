@@ -1,9 +1,12 @@
 package dev.munebase.dynamickeybinds.forge;
 
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
+import dev.munebase.dynamickeybinds.action.DynamicKeybindActionRegistry;
 import dev.munebase.dynamickeybinds.client.RuntimeKeyMappingManager;
+import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
@@ -18,6 +21,7 @@ import org.slf4j.LoggerFactory;
 @Mod.EventBusSubscriber(modid = "dynamickeybinds", value = Dist.CLIENT)
 public final class ForgeClientEvents {
     private static final Logger LOGGER = LoggerFactory.getLogger("DynamicKeybinds");
+    private static boolean defaultHandlerRegistered = false;
 
     private ForgeClientEvents() {
     }
@@ -64,6 +68,19 @@ public final class ForgeClientEvents {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
+        if (!defaultHandlerRegistered) {
+            DynamicKeybindActionRegistry.register(CommonDynamicKeyCommands.DEFAULT_HANDLER_ACTION_ID, (actionID, data) -> {
+                Minecraft innerMinecraft = Minecraft.getInstance();
+                if (innerMinecraft.player == null) {
+                    return;
+                }
+
+                String keybindId = data.getString("KeyID");
+                innerMinecraft.player.sendSystemMessage(Component.literal("Dynamic key pressed: " + keybindId));
+            });
+            defaultHandlerRegistered = true;
+        }
+
         ForgeKeybindPersistence.pollAndSyncDynamicKeyRebinds();
         if (minecraft.screen != null) {
             return;
@@ -73,7 +90,7 @@ public final class ForgeClientEvents {
             while (keyBinding.consumeClick()) {
                 var action = DynamicKeyRegistryProvider.getRegistry().getKeyBindAction(keyBinding);
                 if (action.isPresent()) {
-                    dev.munebase.dynamickeybinds.action.DynamicKeybindActionRegistry.dispatch(
+                    DynamicKeybindActionRegistry.dispatch(
                         action.get().actionID(),
                         action.get().data()
                     );

@@ -1,5 +1,6 @@
 package dev.munebase.dynamickeybinds.forge.server;
 
+import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
 import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
 import dev.munebase.dynamickeybinds.network.SyncKeybindsPacket;
@@ -45,7 +46,7 @@ public final class ForgeServerKeybindHandler {
     private static void syncLoadedKeybindsToPlayer(net.minecraft.server.level.ServerPlayer player, List<StoredKeybind> keybinds) {
         try {
             SyncKeybindsPacket packet = new SyncKeybindsPacket(keybinds);
-            dev.munebase.dynamickeybinds.forge.network.ForgeNetworking.CHANNEL.send(
+            ForgeNetworking.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 packet
             );

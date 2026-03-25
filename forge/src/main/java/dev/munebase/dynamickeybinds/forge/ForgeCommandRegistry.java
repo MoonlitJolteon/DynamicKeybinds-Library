@@ -7,6 +7,7 @@ import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
@@ -59,7 +60,13 @@ public final class ForgeCommandRegistry {
      * Sends a request to the server to add a dynamic keybind.
      */
     private static int add(CommandSourceStack source, String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
-        if (!ForgeNetworking.sendAddKeybindToServer(id, keyCode, category, action)) {
+        CompoundTag defaultActionData = new CompoundTag();
+        defaultActionData.putString("KeyID", id);
+        Optional<DynamicKeybindAction> effectiveAction = action.isPresent()
+            ? action
+            : CommonDynamicKeyCommands.createDefaultDebugAction(id, defaultActionData);
+
+        if (!ForgeNetworking.sendAddKeybindToServer(id, keyCode, category, effectiveAction)) {
             source.sendSystemMessage(Component.literal(CommonDynamicKeyCommands.formatNetworkingNotInitializedMessage()));
             return 0;
         }

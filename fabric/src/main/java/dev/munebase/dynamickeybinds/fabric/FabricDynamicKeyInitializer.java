@@ -1,6 +1,8 @@
 package dev.munebase.dynamickeybinds.fabric;
 
 import dev.munebase.dynamickeybinds.*;
+import dev.munebase.dynamickeybinds.action.DynamicKeybindActionRegistry;
+import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
 import dev.munebase.dynamickeybinds.fabric.network.FabricNetworking;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.Environment;
@@ -8,6 +10,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 /**
  * Fabric client-side initializer for DynamicKeybinds.
@@ -24,6 +27,15 @@ public class FabricDynamicKeyInitializer implements ClientModInitializer {
 
         // Register client-side networking handlers
         FabricNetworking.registerClientHandlers();
+        DynamicKeybindActionRegistry.register(CommonDynamicKeyCommands.DEFAULT_HANDLER_ACTION_ID, (actionID, data) -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.player == null) {
+                return;
+            }
+
+            String keybindId = data.getString("KeyID");
+            minecraft.player.sendSystemMessage(Component.literal("Dynamic key pressed: " + keybindId));
+        });
         
         FabricKeybindPersistence.register();
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
@@ -45,7 +57,7 @@ public class FabricDynamicKeyInitializer implements ClientModInitializer {
             while (keyBinding.consumeClick()) {
                 var action = registry.getKeyBindAction(keyBinding);
                 if (action.isPresent()) {
-                    dev.munebase.dynamickeybinds.action.DynamicKeybindActionRegistry.dispatch(
+                    DynamicKeybindActionRegistry.dispatch(
                         action.get().actionID(),
                         action.get().data()
                     );

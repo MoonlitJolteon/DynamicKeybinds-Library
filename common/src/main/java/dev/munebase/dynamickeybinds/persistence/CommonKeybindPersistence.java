@@ -6,6 +6,8 @@ import net.minecraft.nbt.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,7 +43,7 @@ public final class CommonKeybindPersistence {
         }
 
         try {
-            CompoundTag rootTag = net.minecraft.nbt.NbtIo.read(nbtPath.toFile());
+            CompoundTag rootTag = net.minecraft.nbt.NbtIo.readCompressed(nbtPath.toFile());
             if (rootTag == null) {
                 LOGGER.warn("Root NBT tag is null");
                 return new ArrayList<>();
@@ -64,12 +66,12 @@ public final class CommonKeybindPersistence {
                 String category = keybindTag.getString("category");
                 
                 // Load action if present (backward compatible)
-                java.util.Optional<dev.munebase.dynamickeybinds.action.DynamicKeybindAction> action = java.util.Optional.empty();
+                java.util.Optional<DynamicKeybindAction> action = java.util.Optional.empty();
                 if (keybindTag.contains("action")) {
                     CompoundTag actionTag = keybindTag.getCompound("action");
                     String actionID = actionTag.getString("actionID");
                     CompoundTag actionData = actionTag.getCompound("data");
-                    action = java.util.Optional.of(new dev.munebase.dynamickeybinds.action.DynamicKeybindAction(actionID, actionData));
+                    action = java.util.Optional.of(new DynamicKeybindAction(actionID, actionData));
                 }
                 
                 entries.add(new StoredKeybind(id, keyCode, category, action));
@@ -102,7 +104,7 @@ public final class CommonKeybindPersistence {
             // Load existing root tag or create new one
             CompoundTag rootTag;
             if (Files.exists(nbtPath)) {
-                rootTag = net.minecraft.nbt.NbtIo.read(nbtPath.toFile());
+                rootTag = net.minecraft.nbt.NbtIo.readCompressed(nbtPath.toFile());
                 if (rootTag == null) {
                     rootTag = new CompoundTag();
                 }
@@ -127,7 +129,7 @@ public final class CommonKeybindPersistence {
                 
                 // Save action if present
                 if (keybind.action().isPresent()) {
-                    dev.munebase.dynamickeybinds.action.DynamicKeybindAction action = keybind.action().get();
+                    DynamicKeybindAction action = keybind.action().get();
                     CompoundTag actionTag = new CompoundTag();
                     actionTag.putString("actionID", action.actionID());
                     actionTag.put("data", action.data().copy());
@@ -142,7 +144,7 @@ public final class CommonKeybindPersistence {
             rootTag.put(PLAYERS_TAG, playersTag);
 
             // Write NBT file
-            net.minecraft.nbt.NbtIo.write(rootTag, nbtPath.toFile());
+            net.minecraft.nbt.NbtIo.writeCompressed(rootTag, nbtPath.toFile());
             LOGGER.info("Saved {} keybinds to NBT for player {}", keybinds.size(), playerUUID);
         } catch (IOException e) {
             LOGGER.error("Error saving keybinds to {}", nbtPath, e);
