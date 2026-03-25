@@ -2,7 +2,6 @@ package dev.munebase.dynamickeybinds.client;
 
 import dev.munebase.dynamickeybinds.DynamicKeyRegistry;
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
-import dev.munebase.dynamickeybinds.persistence.CommonKeybindPersistence;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import dev.munebase.dynamickeybinds.util.KeyMappingUtil;
 import net.minecraft.client.KeyMapping;
@@ -102,35 +101,16 @@ public final class CommonClientKeybindPersistence {
             currentPlayerUUID = minecraft.player.getUUID().toString();
             currentWorldPath = resolveWorldPath().toString();
 
-            logger.info("{}: Logging in. World: {}, Player: {}", platformName, currentWorldPath, currentPlayerUUID);
+            logger.info("{}: Logging in. Awaiting server keybinds sync. Player: {}", platformName, currentPlayerUUID);
 
-            List<StoredKeybind> entries = CommonKeybindPersistence.loadKeybinds(
-                Path.of(currentWorldPath),
-                currentPlayerUUID
-            );
-
+            // Clear any existing dynamic keybinds - they will be loaded from server sync
             DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
-
-            for (StoredKeybind entry : entries) {
-                String cleanId = KeyMappingUtil.normalizeId(entry.id());
-                if (registry.getKeyBindById(cleanId) != null) {
-                    continue;
-                }
-
-                try {
-                    KeyMapping keyMapping = registry.registerDynamicKey(
-                        cleanId,
-                        entry.keyCode(),
-                        entry.category(),
-                        entry.action()
-                    );
-                    RuntimeKeyMappingManager.registerRuntimeKey(keyMapping, logger);
-                } catch (IllegalArgumentException e) {
-                    logger.error("Failed to register keybind: {}", cleanId, e);
-                }
+            for (KeyMapping keyMapping : new ArrayList<>(registry.getAllDynamicKeys())) {
+                registry.unregisterDynamicKey(keyMapping);
+                RuntimeKeyMappingManager.unregisterRuntimeKey(keyMapping, logger);
             }
 
-            snapshotDynamicKeycodes(registry);
+            lastSyncedDynamicKeycodes.clear();
         } catch (Exception e) {
             logger.error("Error during login", e);
         }
@@ -140,24 +120,7 @@ public final class CommonClientKeybindPersistence {
         try {
             DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
 
-            if (currentWorldPath != null && currentPlayerUUID != null) {
-                List<StoredKeybind> entries = new ArrayList<>();
-                for (KeyMapping keyMapping : registry.getAllDynamicKeys()) {
-                    String cleanId = KeyMappingUtil.normalizeId(keyMapping.getName());
-                    String category = KeyMappingUtil.normalizeCategory(keyMapping.getCategory());
-                    int keyCode = KeyMappingUtil.extractKeyCode(keyMapping);
-                    entries.add(new StoredKeybind(cleanId, keyCode, category, registry.getKeyBindAction(keyMapping)));
-                }
-
-                CommonKeybindPersistence.saveKeybinds(
-                    Path.of(currentWorldPath),
-                    currentPlayerUUID,
-                    entries
-                );
-
-                logger.info("{}: Saved {} keybinds on logout", platformName, entries.size());
-            }
-
+            // Unregister all dynamic keybinds - they're only stored on the server
             for (KeyMapping keyMapping : new ArrayList<>(registry.getAllDynamicKeys())) {
                 registry.unregisterDynamicKey(keyMapping);
                 RuntimeKeyMappingManager.unregisterRuntimeKey(keyMapping, logger);
@@ -166,6 +129,8 @@ public final class CommonClientKeybindPersistence {
             currentWorldPath = null;
             currentPlayerUUID = null;
             lastSyncedDynamicKeycodes.clear();
+
+            logger.info("{}: Logged out and cleared all client-side keybinds", platformName);
         } catch (Exception e) {
             logger.error("Error during logout", e);
         }

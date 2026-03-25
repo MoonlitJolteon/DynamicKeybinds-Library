@@ -6,6 +6,8 @@ import dev.munebase.dynamickeybinds.network.CommonPacketCodec;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.forge.ForgeKeybindPersistence;
+import dev.munebase.dynamickeybinds.forge.server.ForgeServerKeybindHandler;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -114,7 +116,7 @@ public final class ForgeNetworking {
             try {
                 net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
                 if (minecraft.player != null) {
-                    dev.munebase.dynamickeybinds.forge.ForgeKeybindPersistence.handleServerSync(pkt.getKeybinds());
+                    ForgeKeybindPersistence.handleServerSync(pkt.getKeybinds());
                 }
             } catch (Exception e) {
                 LOGGER.error("Error handling SyncKeybindsPacket", e);
@@ -152,7 +154,7 @@ public final class ForgeNetworking {
                 if (context.getDirection() == NetworkDirection.PLAY_TO_SERVER) {
                     net.minecraft.server.level.ServerPlayer player = context.getSender();
                     if (player != null) {
-                        dev.munebase.dynamickeybinds.forge.server.ForgeServerKeybindHandler.handleAddKeybind(player, pkt);
+                        ForgeServerKeybindHandler.handleAddKeybind(player, pkt);
                     }
                 }
             } catch (Exception e) {
@@ -191,7 +193,7 @@ public final class ForgeNetworking {
                 if (context.getDirection() == NetworkDirection.PLAY_TO_SERVER) {
                     net.minecraft.server.level.ServerPlayer player = context.getSender();
                     if (player != null) {
-                        dev.munebase.dynamickeybinds.forge.server.ForgeServerKeybindHandler.handleRemoveKeybind(player, pkt);
+                        ForgeServerKeybindHandler.handleRemoveKeybind(player, pkt);
                     }
                 }
             } catch (Exception e) {
@@ -230,7 +232,7 @@ public final class ForgeNetworking {
                 if (context.getDirection() == NetworkDirection.PLAY_TO_SERVER) {
                     net.minecraft.server.level.ServerPlayer player = context.getSender();
                     if (player != null) {
-                        dev.munebase.dynamickeybinds.forge.server.ForgeServerKeybindHandler.handleUpdateKeybind(player, pkt);
+                        ForgeServerKeybindHandler.handleUpdateKeybind(player, pkt);
                     }
                 }
             } catch (Exception e) {

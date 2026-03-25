@@ -28,10 +28,6 @@ configurations {
     developmentForge.extendsFrom common
 }
 
-repositories {
-    maven { url = 'https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1' }
-}
-
 dependencies {
     forge "net.minecraftforge:forge:${project.forgeVersion}"
     modApi "dev.architectury:architectury-forge:${project.architecturyVersion}"

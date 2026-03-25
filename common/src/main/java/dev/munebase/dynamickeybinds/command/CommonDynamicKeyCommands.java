@@ -2,8 +2,11 @@ package dev.munebase.dynamickeybinds.command;
 
 import dev.munebase.dynamickeybinds.DynamicKeyRegistry;
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
+import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.util.KeyMappingUtil;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.nbt.CompoundTag;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +16,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonDynamicKeyCommands {
     private static final Logger LOGGER = LoggerFactory.getLogger("DynamicKeybinds");
+    public static final String DEFAULT_HANDLER_ACTION_ID = "dynamickeybinds:default_handler";
 
     private CommonDynamicKeyCommands() {
     }
@@ -26,7 +30,7 @@ public final class CommonDynamicKeyCommands {
      * @param onError Called with error message if registration fails
      * @return The registered KeyMapping, or null if registration failed
      */
-    public static KeyMapping addKeybind(String id, int keyCode, String category, java.util.Optional<dev.munebase.dynamickeybinds.action.DynamicKeybindAction> action,
+    public static KeyMapping addKeybind(String id, int keyCode, String category, java.util.Optional<DynamicKeybindAction> action,
                                         java.util.function.Consumer<String> onError) {
         DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
         try {
@@ -97,6 +101,16 @@ public final class CommonDynamicKeyCommands {
      */
     public static String formatRemoveRequestMessage(String id) {
         return "Requesting server to remove dynamic keybind: " + id;
+    }
+
+    /**
+     * Builds the default debug action payload used when no explicit action is provided.
+     *
+     * @param id keybind id
+     * @return optional action for default handler
+     */
+    public static java.util.Optional<DynamicKeybindAction> createDefaultDebugAction(String id, CompoundTag data) {
+        return java.util.Optional.of(new DynamicKeybindAction(DEFAULT_HANDLER_ACTION_ID, data));
     }
 
     /**

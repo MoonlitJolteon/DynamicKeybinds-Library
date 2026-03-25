@@ -4,8 +4,8 @@ import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.LevelResource;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -69,9 +69,6 @@ public final class CommonServerKeybindHandler {
             keybinds.add(new StoredKeybind(pkt.getId(), pkt.getKeyCode(), pkt.getCategory(), pkt.getAction()));
             ServerKeybindPersistence.saveKeybinds(worldDataPath, playerUUID, keybinds);
             syncSender.accept(player, keybinds);
-            pkt.getAction().ifPresent(action -> player.sendSystemMessage(
-                Component.literal("Dynamic keybind action: " + action.actionID())
-            ));
             logger.info("Server: Added keybind {} for player {}", pkt.getId(), playerUUID);
         } catch (Exception e) {
             logger.error("Error handling add keybind", e);
@@ -137,6 +134,6 @@ public final class CommonServerKeybindHandler {
     }
 
     private static Path getWorldDataPath(ServerPlayer player) {
-        return player.getServer().getServerDirectory().toPath().resolve("world").resolve("data");
+        return player.getServer().getWorldPath(LevelResource.ROOT).resolve("data");
     }
 }

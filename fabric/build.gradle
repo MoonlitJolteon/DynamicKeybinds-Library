@@ -23,10 +23,6 @@ configurations {
     developmentFabric.extendsFrom common
 }
 
-repositories {
-    maven { url = 'https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1' }
-}
-
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.fabricLoaderVersion}"
     modApi "net.fabricmc.fabric-api:fabric-api:${project.fabricApiVersion}"

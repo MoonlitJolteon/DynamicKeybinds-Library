@@ -10,6 +10,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 
 import java.util.Optional;
@@ -63,8 +64,14 @@ public final class FabricCommandRegistry {
         * @return command result code
      */
     private static int add(FabricClientCommandSource source, String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
+        CompoundTag data = new CompoundTag();
+        data.putString("KeyID", id);
+        Optional<DynamicKeybindAction> effectiveAction = action.isPresent()
+            ? action
+            : CommonDynamicKeyCommands.createDefaultDebugAction(id, data);
+
         // Send packet to server
-        FabricNetworking.sendAddKeybindToServer(id, keyCode, category, action);
+        FabricNetworking.sendAddKeybindToServer(id, keyCode, category, effectiveAction);
         source.sendFeedback(Component.literal(CommonDynamicKeyCommands.formatAddRequestMessage(id)));
         return 1;
     }

@@ -9,6 +9,7 @@ import net.minecraft.nbt.NbtIo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -38,7 +39,10 @@ public final class ServerKeybindPersistence {
                 return new ArrayList<>();
             }
 
-            CompoundTag rootTag = NbtIo.readCompressed(keybindsFile.toFile());
+            CompoundTag rootTag = readRootTag(keybindsFile);
+            if (rootTag == null) {
+                return new ArrayList<>();
+            }
             CompoundTag playersTag = rootTag.getCompound("players");
             CompoundTag playerTag = playersTag.getCompound(playerUUID);
             ListTag keybindsTag = playerTag.getList("keybinds", Tag.TAG_COMPOUND);
@@ -82,7 +86,11 @@ public final class ServerKeybindPersistence {
             // Load existing data or create new
             CompoundTag rootTag;
             if (Files.exists(keybindsFile)) {
-                rootTag = NbtIo.readCompressed(keybindsFile.toFile());
+                rootTag = readRootTag(keybindsFile);
+                if (rootTag == null) {
+                    rootTag = new CompoundTag();
+                    rootTag.put("players", new CompoundTag());
+                }
             } else {
                 rootTag = new CompoundTag();
                 rootTag.put("players", new CompoundTag());
@@ -118,6 +126,15 @@ public final class ServerKeybindPersistence {
             LOGGER.info("Server: Saved {} keybinds for player {}", keybinds.size(), playerUUID);
         } catch (Exception e) {
             LOGGER.error("Error saving server keybinds", e);
+        }
+    }
+
+    private static CompoundTag readRootTag(Path keybindsFile) {
+        try {
+            return NbtIo.readCompressed(keybindsFile.toFile());
+        } catch (IOException e) {
+            LOGGER.error("Could not read server keybinds file {}", keybindsFile, e);
+            return null;
         }
     }
 }
