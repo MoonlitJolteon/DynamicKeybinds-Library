@@ -137,9 +137,71 @@ public final class CommonDynamicKeyCommands {
             return null;
         }
 
-        registry.unregisterDynamicKey(keyBinding);
+        registry.unregisterDynamicKey(id);
         LOGGER.info("Unregistered keybind: {}", id);
         return keyBinding;
+    }
+
+    /**
+     * Shared command execution helper for add operations.
+     *
+     * @param id keybind identifier
+     * @param keyCode GLFW key code
+     * @param category keybind category
+     * @param action action payload
+     * @param onError receives user-facing error message
+     * @param onSuccess receives user-facing success message
+     * @return command result code
+     */
+    public static int executeAdd(
+        String id,
+        int keyCode,
+        String category,
+        java.util.Optional<DynamicKeybindAction> action,
+        java.util.function.Consumer<String> onError,
+        java.util.function.Consumer<String> onSuccess
+    ) {
+        KeyMapping registered = addKeybind(id, keyCode, category, action, onError);
+        if (registered == null) {
+            return 0;
+        }
+        onSuccess.accept(formatAddRequestMessage(id));
+        return 1;
+    }
+
+    /**
+     * Shared command execution helper for remove operations.
+     *
+     * @param id keybind identifier
+     * @param onError receives user-facing error message
+     * @param onSuccess receives user-facing success message
+     * @return command result code
+     */
+    public static int executeRemove(
+        String id,
+        java.util.function.Consumer<String> onError,
+        java.util.function.Consumer<String> onSuccess
+    ) {
+        KeyMapping removed = removeKeybind(id, onError);
+        if (removed == null) {
+            return 0;
+        }
+        onSuccess.accept(formatRemoveRequestMessage(id));
+        return 1;
+    }
+
+    /**
+     * Shared command execution helper for list operations.
+     *
+     * @param sendLine line sender callback
+     * @return command result code
+     */
+    public static int executeList(java.util.function.Consumer<String> sendLine) {
+        var lines = formatListOutput();
+        for (String line : lines) {
+            sendLine.accept(line);
+        }
+        return listResultCode(lines);
     }
 
     /**

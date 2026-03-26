@@ -1,6 +1,7 @@
 package dev.munebase.dynamickeybinds.forge;
 
 import dev.munebase.dynamickeybinds.client.CommonClientKeybindPersistence;
+import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.minecraftforge.api.distmarker.Dist;
@@ -18,7 +19,7 @@ public final class ForgeKeybindPersistence {
     private static final CommonClientKeybindPersistence COMMON = new CommonClientKeybindPersistence(
         LOGGER,
         "Forge",
-        (id, keyCode) -> dev.munebase.dynamickeybinds.forge.network.ForgeNetworking.CHANNEL.sendToServer(
+        (id, keyCode) -> ForgeNetworking.CHANNEL.sendToServer(
             new UpdateKeybindPacket(id, keyCode)
         )
     );

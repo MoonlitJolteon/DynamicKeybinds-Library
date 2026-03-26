@@ -1,7 +1,12 @@
 package dev.munebase.dynamickeybinds.fabric;
 
+import java.util.Optional;
+
 import dev.munebase.dynamickeybinds.*;
+import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindActionRegistry;
+import dev.munebase.dynamickeybinds.client.ClientRegistryFactory;
+import dev.munebase.dynamickeybinds.client.ClientRegistryNetworkBridge;
 import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
 import dev.munebase.dynamickeybinds.fabric.network.FabricNetworking;
 import net.fabricmc.api.ClientModInitializer;
@@ -22,8 +27,18 @@ public class FabricDynamicKeyInitializer implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        registry = new DynamicKeyRegistryImpl();
-        DynamicKeyRegistryProvider.setRegistryProvider(new FabricRegistryProvider(registry));
+        registry = ClientRegistryFactory.createNetworkedRegistry(new ClientRegistryNetworkBridge() {
+            @Override
+            public void sendAdd(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
+                FabricNetworking.sendAddKeybindToServer(id, keyCode, category, action);
+            }
+
+            @Override
+            public void sendRemove(String id) {
+                FabricNetworking.sendRemoveKeybindToServer(id);
+            }
+        });
+        DynamicKeyRegistryProvider.setRegistryProvider(ClientRegistryFactory.createProvider(registry));
 
         // Register client-side networking handlers
         FabricNetworking.registerClientHandlers();
@@ -63,22 +78,6 @@ public class FabricDynamicKeyInitializer implements ClientModInitializer {
                     );
                 }
             }
-        }
-    }
-
-    /**
-     * Provides the dynamic key registry for Fabric.
-     */
-    static class FabricRegistryProvider implements DynamicKeyRegistryProvider {
-        private final DynamicKeyRegistry registry;
-
-        FabricRegistryProvider(DynamicKeyRegistry registry) {
-            this.registry = registry;
-        }
-
-        @Override
-        public DynamicKeyRegistry getRegistryInstance() {
-            return registry;
         }
     }
 }

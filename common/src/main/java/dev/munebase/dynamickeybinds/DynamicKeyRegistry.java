@@ -2,6 +2,9 @@ package dev.munebase.dynamickeybinds;
 
 import net.minecraft.client.KeyMapping;
 import java.util.Collection;
+import java.util.Optional;
+
+import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 
 /**
  * Registry for dynamically created keybinds at runtime.
@@ -30,7 +33,7 @@ import java.util.Collection;
  * </pre>
  * 
  * @see DynamicKeyRegistryImpl
- * @see dev.munebase.dynamickeybinds.action.DynamicKeybindAction
+ * @see DynamicKeybindAction
  */
 public interface DynamicKeyRegistry {
     /**
@@ -43,7 +46,7 @@ public interface DynamicKeyRegistry {
      * @return the registered KeyMapping
      * @throws IllegalArgumentException if the ID already exists or keyCode is invalid
      */
-    KeyMapping registerDynamicKey(String id, int keyCode, String category, java.util.Optional<dev.munebase.dynamickeybinds.action.DynamicKeybindAction> action);
+    KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action);
 
     /**
      * Unregister an existing dynamic key.
@@ -51,6 +54,21 @@ public interface DynamicKeyRegistry {
      * @param keyBinding the key binding to unregister
      */
     void unregisterDynamicKey(KeyMapping keyBinding);
+
+    /**
+     * Unregister an existing dynamic key by ID.
+     *
+     * @param id keybind identifier
+     * @return true when a keybind with the given ID existed and was removed
+     */
+    default boolean unregisterDynamicKey(String id) {
+        KeyMapping keyBinding = getKeyBindById(id);
+        if (keyBinding == null) {
+            return false;
+        }
+        unregisterDynamicKey(keyBinding);
+        return true;
+    }
 
     /**
      * Get all currently registered dynamic keys.
@@ -73,5 +91,5 @@ public interface DynamicKeyRegistry {
      * @param keyBinding the key mapping to query
      * @return the action, or empty if not set
      */
-    java.util.Optional<dev.munebase.dynamickeybinds.action.DynamicKeybindAction> getKeyBindAction(KeyMapping keyBinding);
+    Optional<DynamicKeybindAction> getKeyBindAction(KeyMapping keyBinding);
 }

@@ -2,9 +2,9 @@ package dev.munebase.dynamickeybinds.forge;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
+import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
-import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
+import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.nbt.CompoundTag;
@@ -66,36 +66,45 @@ public final class ForgeCommandRegistry {
             ? action
             : CommonDynamicKeyCommands.createDefaultDebugAction(id, defaultActionData);
 
-        if (!ForgeNetworking.sendAddKeybindToServer(id, keyCode, category, effectiveAction)) {
+        try {
+            DynamicKeyRegistryProvider.getRegistry();
+        } catch (IllegalStateException e) {
             source.sendSystemMessage(Component.literal(CommonDynamicKeyCommands.formatNetworkingNotInitializedMessage()));
             return 0;
         }
 
-        source.sendSystemMessage(Component.literal(CommonDynamicKeyCommands.formatAddRequestMessage(id)));
-        return 1;
+        return CommonDynamicKeyCommands.executeAdd(
+            id,
+            keyCode,
+            category,
+            effectiveAction,
+            error -> source.sendSystemMessage(Component.literal(error)),
+            message -> source.sendSystemMessage(Component.literal(message))
+        );
     }
 
     /**
      * Lists client-known dynamic keybinds.
      */
     private static int list(CommandSourceStack source) {
-        var lines = CommonDynamicKeyCommands.formatListOutput();
-        for (String line : lines) {
-            source.sendSystemMessage(Component.literal(line));
-        }
-        return CommonDynamicKeyCommands.listResultCode(lines);
+        return CommonDynamicKeyCommands.executeList(line -> source.sendSystemMessage(Component.literal(line)));
     }
 
     /**
      * Sends a request to the server to remove a dynamic keybind.
      */
     private static int remove(CommandSourceStack source, String id) {
-        if (!ForgeNetworking.sendRemoveKeybindToServer(id)) {
+        try {
+            DynamicKeyRegistryProvider.getRegistry();
+        } catch (IllegalStateException e) {
             source.sendSystemMessage(Component.literal(CommonDynamicKeyCommands.formatNetworkingNotInitializedMessage()));
             return 0;
         }
 
-        source.sendSystemMessage(Component.literal(CommonDynamicKeyCommands.formatRemoveRequestMessage(id)));
-        return 1;
+        return CommonDynamicKeyCommands.executeRemove(
+            id,
+            error -> source.sendSystemMessage(Component.literal(error)),
+            message -> source.sendSystemMessage(Component.literal(message))
+        );
     }
 }

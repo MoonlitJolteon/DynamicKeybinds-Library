@@ -4,7 +4,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
-import dev.munebase.dynamickeybinds.fabric.network.FabricNetworking;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -70,10 +69,14 @@ public final class FabricCommandRegistry {
             ? action
             : CommonDynamicKeyCommands.createDefaultDebugAction(id, data);
 
-        // Send packet to server
-        FabricNetworking.sendAddKeybindToServer(id, keyCode, category, effectiveAction);
-        source.sendFeedback(Component.literal(CommonDynamicKeyCommands.formatAddRequestMessage(id)));
-        return 1;
+        return CommonDynamicKeyCommands.executeAdd(
+            id,
+            keyCode,
+            category,
+            effectiveAction,
+            error -> source.sendError(Component.literal(error)),
+            message -> source.sendFeedback(Component.literal(message))
+        );
     }
 
     /**
@@ -83,11 +86,7 @@ public final class FabricCommandRegistry {
         * @return number of listed keybinds
      */
     private static int list(FabricClientCommandSource source) {
-        var lines = CommonDynamicKeyCommands.formatListOutput();
-        for (String line : lines) {
-            source.sendFeedback(Component.literal(line));
-        }
-        return CommonDynamicKeyCommands.listResultCode(lines);
+        return CommonDynamicKeyCommands.executeList(line -> source.sendFeedback(Component.literal(line)));
     }
 
     /**
@@ -98,9 +97,10 @@ public final class FabricCommandRegistry {
         * @return command result code
      */
     private static int remove(FabricClientCommandSource source, String id) {
-        // Send packet to server
-        FabricNetworking.sendRemoveKeybindToServer(id);
-        source.sendFeedback(Component.literal(CommonDynamicKeyCommands.formatRemoveRequestMessage(id)));
-        return 1;
+        return CommonDynamicKeyCommands.executeRemove(
+            id,
+            error -> source.sendError(Component.literal(error)),
+            message -> source.sendFeedback(Component.literal(message))
+        );
     }
 }

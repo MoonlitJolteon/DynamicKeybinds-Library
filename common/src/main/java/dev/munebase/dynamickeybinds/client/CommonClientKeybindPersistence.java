@@ -41,26 +41,8 @@ public final class CommonClientKeybindPersistence {
             }
 
             DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
-
-            for (KeyMapping keyMapping : new ArrayList<>(registry.getAllDynamicKeys())) {
-                registry.unregisterDynamicKey(keyMapping);
-                RuntimeKeyMappingManager.unregisterRuntimeKey(keyMapping, logger);
-            }
-
-            for (StoredKeybind entry : serverKeybinds) {
-                String cleanId = KeyMappingUtil.normalizeId(entry.id());
-                try {
-                    KeyMapping keyMapping = registry.registerDynamicKey(
-                        cleanId,
-                        entry.keyCode(),
-                        entry.category(),
-                        entry.action()
-                    );
-                    RuntimeKeyMappingManager.registerRuntimeKey(keyMapping, logger);
-                } catch (IllegalArgumentException e) {
-                    logger.error("Failed to register keybind: {}", cleanId, e);
-                }
-            }
+            ServerSynchronizedDynamicKeyRegistry synchronizedRegistry = requireSynchronizedRegistry(registry);
+            synchronizedRegistry.applyServerSnapshot(serverKeybinds, logger);
 
             logger.info("{}: Registered {} keybinds from server sync", platformName, serverKeybinds.size());
             snapshotDynamicKeycodes(registry);
@@ -81,7 +63,10 @@ public final class CommonClientKeybindPersistence {
                 String id = KeyMappingUtil.normalizeId(keyMapping.getName());
                 int keyCode = KeyMappingUtil.extractKeyCode(keyMapping);
                 Integer previous = lastSyncedDynamicKeycodes.get(id);
-                if (previous == null || previous != keyCode) {
+                if (previous == null) {
+                    continue;
+                }
+                if (previous != keyCode) {
                     updateSender.accept(id, keyCode);
                     lastSyncedDynamicKeycodes.put(id, keyCode);
                 }
@@ -105,10 +90,8 @@ public final class CommonClientKeybindPersistence {
 
             // Clear any existing dynamic keybinds - they will be loaded from server sync
             DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
-            for (KeyMapping keyMapping : new ArrayList<>(registry.getAllDynamicKeys())) {
-                registry.unregisterDynamicKey(keyMapping);
-                RuntimeKeyMappingManager.unregisterRuntimeKey(keyMapping, logger);
-            }
+            ServerSynchronizedDynamicKeyRegistry synchronizedRegistry = requireSynchronizedRegistry(registry);
+            synchronizedRegistry.clearLocalState(logger);
 
             lastSyncedDynamicKeycodes.clear();
         } catch (Exception e) {
@@ -121,10 +104,8 @@ public final class CommonClientKeybindPersistence {
             DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
 
             // Unregister all dynamic keybinds - they're only stored on the server
-            for (KeyMapping keyMapping : new ArrayList<>(registry.getAllDynamicKeys())) {
-                registry.unregisterDynamicKey(keyMapping);
-                RuntimeKeyMappingManager.unregisterRuntimeKey(keyMapping, logger);
-            }
+            ServerSynchronizedDynamicKeyRegistry synchronizedRegistry = requireSynchronizedRegistry(registry);
+            synchronizedRegistry.clearLocalState(logger);
 
             currentWorldPath = null;
             currentPlayerUUID = null;
@@ -142,6 +123,13 @@ public final class CommonClientKeybindPersistence {
             String id = KeyMappingUtil.normalizeId(keyMapping.getName());
             lastSyncedDynamicKeycodes.put(id, KeyMappingUtil.extractKeyCode(keyMapping));
         }
+    }
+
+    private static ServerSynchronizedDynamicKeyRegistry requireSynchronizedRegistry(DynamicKeyRegistry registry) {
+        if (registry instanceof ServerSynchronizedDynamicKeyRegistry synchronizedRegistry) {
+            return synchronizedRegistry;
+        }
+        throw new IllegalStateException("Client registry must implement ServerSynchronizedDynamicKeyRegistry");
     }
 
     private static Path resolveWorldPath() {

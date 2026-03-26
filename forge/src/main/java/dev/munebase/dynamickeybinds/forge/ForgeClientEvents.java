@@ -51,7 +51,7 @@ public final class ForgeClientEvents {
      */
     @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-        for (KeyMapping keyMapping : ForgeDynamicKeybindsMod.REGISTRY.getAllDynamicKeys()) {
+        for (KeyMapping keyMapping : DynamicKeyRegistryProvider.getRegistry().getAllDynamicKeys()) {
             event.register(keyMapping);
         }
     }

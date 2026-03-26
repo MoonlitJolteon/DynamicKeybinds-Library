@@ -11,6 +11,8 @@ import java.util.Arrays;
  * Loader-agnostic runtime key mapping registration helpers.
  */
 public final class RuntimeKeyMappingManager {
+    private static volatile Field resolvedKeyMappingsField;
+
     private RuntimeKeyMappingManager() {
     }
 
@@ -65,11 +67,55 @@ public final class RuntimeKeyMappingManager {
 
     private static void applyMappings(Minecraft minecraft, KeyMapping[] updated, Logger logger) {
         try {
-            Field field = net.minecraft.client.Options.class.getDeclaredField("keyMappings");
-            field.setAccessible(true);
+            Field field = resolveKeyMappingsField(logger);
+            if (field == null) {
+                return;
+            }
             field.set(minecraft.options, updated);
         } catch (Throwable e) {
             logger.error("Could not update runtime key mappings", e);
         }
+    }
+
+    private static Field resolveKeyMappingsField(Logger logger) {
+        Field cached = resolvedKeyMappingsField;
+        if (cached != null) {
+            return cached;
+        }
+
+        Class<?> optionsClass = net.minecraft.client.Options.class;
+        String[] candidates = new String[] {"keyMappings", "allKeys", "field_1843", "f_92059_"};
+
+        for (String candidate : candidates) {
+            try {
+                Field field = optionsClass.getDeclaredField(candidate);
+                if (field.getType().isArray() && field.getType().getComponentType() == KeyMapping.class) {
+                    field.setAccessible(true);
+                    resolvedKeyMappingsField = field;
+                    return field;
+                }
+            } catch (NoSuchFieldException ignored) {
+            }
+        }
+
+        Field discovered = null;
+        for (Field field : optionsClass.getDeclaredFields()) {
+            if (field.getType().isArray() && field.getType().getComponentType() == KeyMapping.class) {
+                if (discovered != null) {
+                    logger.error("Could not resolve runtime key mappings field: multiple KeyMapping[] fields found in Options");
+                    return null;
+                }
+                discovered = field;
+            }
+        }
+
+        if (discovered == null) {
+            logger.error("Could not resolve runtime key mappings field: no KeyMapping[] field found in Options");
+            return null;
+        }
+
+        discovered.setAccessible(true);
+        resolvedKeyMappingsField = discovered;
+        return discovered;
     }
 }
