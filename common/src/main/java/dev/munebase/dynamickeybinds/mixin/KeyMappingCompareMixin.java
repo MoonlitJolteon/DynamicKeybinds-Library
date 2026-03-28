@@ -42,7 +42,7 @@ public class KeyMappingCompareMixin {
      * This mixin ensures runtime key mappings without MAP entries still compare safely.
      *
      * @author Moonlit Productions
-     * @reason Ensure runtime-created key mappings without MAP entries can still be sorted safely.
+    * Reason: Ensures runtime-created key mappings without MAP entries can still be sorted safely.
      * @param other other key mapping to compare against
      * @return comparison result used for ordering
      */
