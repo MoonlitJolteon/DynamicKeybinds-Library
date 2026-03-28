@@ -1,6 +1,7 @@
 package dev.munebase.dynamickeybinds.server;
 
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -60,7 +61,11 @@ public final class ServerKeybindPersistence {
                     CompoundTag data = actionTag.getCompound("data");
                     action = Optional.of(new DynamicKeybindAction(actionID, data));
                 }
-                keybinds.add(new StoredKeybind(id, keyCode, category, action));
+                DisplaySpec displaySpec = DisplaySpec.empty();
+                if (keybindTag.contains("display")) {
+                    displaySpec = DisplaySpec.fromNbt(keybindTag.getCompound("display"));
+                }
+                keybinds.add(new StoredKeybind(id, keyCode, category, action, displaySpec));
             }
 
             LOGGER.info("Server: Loaded {} keybinds for player {}", keybinds.size(), playerUUID);
@@ -112,6 +117,9 @@ public final class ServerKeybindPersistence {
                     actionTag.putString("actionID", action.actionID());
                     actionTag.put("data", action.data().copy());
                     keybindTag.put("action", actionTag);
+                }
+                if (!keybind.displaySpec().isEmpty()) {
+                    keybindTag.put("display", keybind.displaySpec().toNbt());
                 }
                 keybindsTag.add(keybindTag);
             }

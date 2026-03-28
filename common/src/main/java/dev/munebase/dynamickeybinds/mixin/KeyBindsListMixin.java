@@ -1,4 +1,4 @@
-package dev.munebase.dynamickeybinds.fabric.mixin;
+package dev.munebase.dynamickeybinds.mixin;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.controls.KeyBindsList;
@@ -49,7 +49,7 @@ public class KeyBindsListMixin {
     /**
      * Injects into list initialization to backfill missing key map indexes.
      */
-    @Inject(method = "<init>", at = @At("HEAD"))
+    @Inject(method = "<init>", at = @At("TAIL"))
     private void onInit(CallbackInfo ci) {
         populateMapForAllKeybindings();
     }
@@ -67,18 +67,15 @@ public class KeyBindsListMixin {
             Collection<KeyMapping> allMappings = (Collection<KeyMapping>) ALL_FIELD.get(null);
             @SuppressWarnings("unchecked")
             Map<String, Integer> keyMap = (Map<String, Integer>) MAP_FIELD.get(null);
-            
+
             if (keyMap != null && allMappings != null) {
-                // Ensure all KeyMappings have entries in the MAP
-                // Find the highest existing index
                 int maxIndex = -1;
                 for (Integer index : keyMap.values()) {
                     if (index > maxIndex) {
                         maxIndex = index;
                     }
                 }
-                
-                // Add entries for any missing KeyMappings
+
                 int nextIndex = maxIndex + 1;
                 for (KeyMapping keyMapping : allMappings) {
                     String name = keyMapping.getName();
@@ -88,7 +85,6 @@ public class KeyBindsListMixin {
                 }
             }
         } catch (Throwable e) {
-            // Silently fail to avoid breaking the game
         }
     }
 }

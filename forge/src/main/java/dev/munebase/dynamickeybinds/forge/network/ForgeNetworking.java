@@ -8,6 +8,7 @@ import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.forge.ForgeKeybindPersistence;
 import dev.munebase.dynamickeybinds.forge.server.ForgeServerKeybindHandler;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.simple.SimpleChannel;
@@ -71,11 +72,11 @@ public final class ForgeNetworking {
      *
      * @return true when sent, false when channel is unavailable
      */
-    public static boolean sendAddKeybindToServer(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
+    public static boolean sendAddKeybindToServer(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
         if (CHANNEL == null) {
             return false;
         }
-        CHANNEL.sendToServer(new AddKeybindPacket(id, keyCode, category, action));
+        CHANNEL.sendToServer(new AddKeybindPacket(id, keyCode, category, action, displaySpec));
         return true;
     }
 

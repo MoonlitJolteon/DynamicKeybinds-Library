@@ -2,6 +2,7 @@ package dev.munebase.dynamickeybinds.client;
 
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryImpl;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import dev.munebase.dynamickeybinds.util.KeyMappingUtil;
 import net.minecraft.client.KeyMapping;
@@ -29,11 +30,16 @@ public final class NetworkedDynamicKeyRegistry implements ServerSynchronizedDyna
 
     @Override
     public KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
-        KeyMapping keyMapping = localRegistry.registerDynamicKey(id, keyCode, category, action);
+        return registerDynamicKey(id, keyCode, category, action, DisplaySpec.empty());
+    }
+
+    @Override
+    public KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
+        KeyMapping keyMapping = localRegistry.registerDynamicKey(id, keyCode, category, action, displaySpec);
         RuntimeKeyMappingManager.registerRuntimeKey(keyMapping, LOGGER);
 
         if (!suppressNetwork.get()) {
-            networkBridge.sendAdd(id, keyCode, category, action);
+            networkBridge.sendAdd(id, keyCode, category, action, displaySpec);
         }
 
         return keyMapping;
@@ -45,12 +51,12 @@ public final class NetworkedDynamicKeyRegistry implements ServerSynchronizedDyna
             return;
         }
 
-        String id = KeyMappingUtil.normalizeId(keyBinding.getName());
+        Optional<String> id = localRegistry.getKeyBindId(keyBinding);
         localRegistry.unregisterDynamicKey(keyBinding);
         RuntimeKeyMappingManager.unregisterRuntimeKey(keyBinding, LOGGER);
 
-        if (!suppressNetwork.get()) {
-            networkBridge.sendRemove(id);
+        if (!suppressNetwork.get() && id.isPresent()) {
+            networkBridge.sendRemove(id.get());
         }
     }
 
@@ -70,6 +76,11 @@ public final class NetworkedDynamicKeyRegistry implements ServerSynchronizedDyna
     }
 
     @Override
+    public Optional<String> getKeyBindId(KeyMapping keyBinding) {
+        return localRegistry.getKeyBindId(keyBinding);
+    }
+
+    @Override
     public void applyServerSnapshot(List<StoredKeybind> serverKeybinds, Logger logger) {
         suppressNetwork.set(true);
         try {
@@ -77,7 +88,7 @@ public final class NetworkedDynamicKeyRegistry implements ServerSynchronizedDyna
             for (StoredKeybind entry : serverKeybinds) {
                 String cleanId = KeyMappingUtil.normalizeId(entry.id());
                 try {
-                    KeyMapping keyMapping = localRegistry.registerDynamicKey(cleanId, entry.keyCode(), entry.category(), entry.action());
+                    KeyMapping keyMapping = localRegistry.registerDynamicKey(cleanId, entry.keyCode(), entry.category(), entry.action(), entry.displaySpec());
                     RuntimeKeyMappingManager.registerRuntimeKey(keyMapping, logger);
                 } catch (IllegalArgumentException e) {
                     logger.error("Failed to register synced keybind: {}", cleanId, e);

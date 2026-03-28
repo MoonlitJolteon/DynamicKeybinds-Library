@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 
 /**
  * Registry for dynamically created keybinds at runtime.
@@ -47,6 +48,19 @@ public interface DynamicKeyRegistry {
      * @throws IllegalArgumentException if the ID already exists or keyCode is invalid
      */
     KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action);
+
+    /**
+     * Register a new dynamic key at runtime with custom display metadata.
+     *
+     * @param id unique identifier for the keybind (e.g., "mymod:key_name")
+     * @param keyCode the GLFW key code (e.g., GLFW.GLFW_KEY_K)
+     * @param category the keybind category for menu organization
+     * @param action the action to trigger when pressed (optional)
+     * @param displaySpec custom display metadata for the keybind label
+     * @return the registered KeyMapping
+     * @throws IllegalArgumentException if the ID already exists or keyCode is invalid
+     */
+    KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec);
 
     /**
      * Unregister an existing dynamic key.
@@ -92,4 +106,12 @@ public interface DynamicKeyRegistry {
      * @return the action, or empty if not set
      */
     Optional<DynamicKeybindAction> getKeyBindAction(KeyMapping keyBinding);
+
+    /**
+     * Resolve the stable keybind ID for a registered mapping.
+     *
+     * @param keyBinding the key mapping instance
+     * @return keybind ID, or empty if mapping is unknown to this registry
+     */
+    Optional<String> getKeyBindId(KeyMapping keyBinding);
 }

@@ -2,6 +2,8 @@ package dev.munebase.dynamickeybinds;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.client.DynamicKeyMapping;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 import net.minecraft.client.KeyMapping;
 import org.lwjgl.glfw.GLFW;
 import java.util.*;
@@ -47,6 +49,12 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
     /** Map of KeyMappings to their associated actions (thread-safe). */
     private final Map<KeyMapping, Optional<DynamicKeybindAction>> actionsByKeyBinding = new ConcurrentHashMap<>();
 
+    /** Map of KeyMappings to their stable keybind IDs (thread-safe). */
+    private final Map<KeyMapping, String> idByKeyBinding = new ConcurrentHashMap<>();
+
+    /** Map of keybind IDs to their display specs (thread-safe). */
+    private final Map<String, DisplaySpec> displaySpecById = new ConcurrentHashMap<>();
+
     /** Set of all registered keybinds for iteration (thread-safe). */
     private final Set<KeyMapping> allDynamicKeys = ConcurrentHashMap.newKeySet();
 
@@ -62,6 +70,22 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
      */
     @Override
     public KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
+        return registerDynamicKey(id, keyCode, category, action, DisplaySpec.empty());
+    }
+
+    /**
+     * Register a new dynamic keybind at runtime with custom display metadata.
+     *
+     * @param id unique identifier for the keybind (e.g., "mymod:ability_cast")
+     * @param keyCode the GLFW key code (must be in valid GLFW range)
+     * @param category the keybind category for menu organization (e.g., "mymod")
+     * @param action optional action to trigger when the key is pressed
+     * @param displaySpec custom display metadata for the keybind label
+     * @return the registered KeyMapping
+     * @throws IllegalArgumentException if ID already exists or keyCode is invalid
+     */
+    @Override
+    public KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
         if (keyBindingsById.containsKey(id)) {
             throw new IllegalArgumentException("Keybind with id '" + id + "' already exists");
         }
@@ -70,15 +94,13 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
             throw new IllegalArgumentException("Invalid keycode: " + keyCode + ". Use GLFW key constants (e.g. 32-348).");
         }
 
-        KeyMapping keyMapping = new KeyMapping(
-            "key." + id,
-            InputConstants.Type.KEYSYM,
-            keyCode,
-            "category." + category
-        );
+        DisplaySpec safeDisplaySpec = displaySpec == null ? DisplaySpec.empty() : displaySpec;
+        KeyMapping keyMapping = new DynamicKeyMapping(id, keyCode, category, safeDisplaySpec);
 
         keyBindingsById.put(id, keyMapping);
         actionsByKeyBinding.put(keyMapping, action);
+        idByKeyBinding.put(keyMapping, id);
+        displaySpecById.put(id, safeDisplaySpec);
         allDynamicKeys.add(keyMapping);
 
         return keyMapping;
@@ -106,9 +128,20 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
     public void unregisterDynamicKey(KeyMapping keyBinding) {
         actionsByKeyBinding.remove(keyBinding);
         allDynamicKeys.remove(keyBinding);
+        String id = idByKeyBinding.remove(keyBinding);
+        if (id != null) {
+            keyBindingsById.remove(id);
+            displaySpecById.remove(id);
+            return;
+        }
 
-        // Also remove from id map
-        keyBindingsById.values().removeIf(kb -> kb == keyBinding);
+        keyBindingsById.entrySet().removeIf(entry -> {
+            if (entry.getValue() == keyBinding) {
+                displaySpecById.remove(entry.getKey());
+                return true;
+            }
+            return false;
+        });
     }
 
     /**
@@ -141,5 +174,21 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
     @Override
     public Optional<DynamicKeybindAction> getKeyBindAction(KeyMapping keyBinding) {
         return actionsByKeyBinding.getOrDefault(keyBinding, Optional.empty());
+    }
+
+    @Override
+    public Optional<String> getKeyBindId(KeyMapping keyBinding) {
+        return Optional.ofNullable(idByKeyBinding.get(keyBinding));
+    }
+
+    /**
+     * Get the display metadata for a registered keybind.
+     *
+     * @param id the keybind ID
+     * @return the DisplaySpec if registered, or an empty one if not found
+     */
+    public Optional<DisplaySpec> getDisplaySpec(String id) {
+        DisplaySpec spec = displaySpecById.getOrDefault(id, DisplaySpec.empty());
+        return Optional.of(spec);
     }
 }

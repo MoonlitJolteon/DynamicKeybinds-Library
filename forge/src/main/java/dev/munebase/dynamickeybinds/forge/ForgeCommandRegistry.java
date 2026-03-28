@@ -2,12 +2,10 @@ package dev.munebase.dynamickeybinds.forge;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
@@ -60,16 +58,9 @@ public final class ForgeCommandRegistry {
      * Sends a request to the server to add a dynamic keybind.
      */
     private static int add(CommandSourceStack source, String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
-        CompoundTag defaultActionData = new CompoundTag();
-        defaultActionData.putString("KeyID", id);
-        Optional<DynamicKeybindAction> effectiveAction = action.isPresent()
-            ? action
-            : CommonDynamicKeyCommands.createDefaultDebugAction(id, defaultActionData);
+        Optional<DynamicKeybindAction> effectiveAction = CommonDynamicKeyCommands.resolveAddAction(id, action);
 
-        try {
-            DynamicKeyRegistryProvider.getRegistry();
-        } catch (IllegalStateException e) {
-            source.sendSystemMessage(Component.literal(CommonDynamicKeyCommands.formatNetworkingNotInitializedMessage()));
+        if (!CommonDynamicKeyCommands.ensureRegistryInitialized(error -> source.sendSystemMessage(Component.literal(error)))) {
             return 0;
         }
 
@@ -94,10 +85,7 @@ public final class ForgeCommandRegistry {
      * Sends a request to the server to remove a dynamic keybind.
      */
     private static int remove(CommandSourceStack source, String id) {
-        try {
-            DynamicKeyRegistryProvider.getRegistry();
-        } catch (IllegalStateException e) {
-            source.sendSystemMessage(Component.literal(CommonDynamicKeyCommands.formatNetworkingNotInitializedMessage()));
+        if (!CommonDynamicKeyCommands.ensureRegistryInitialized(error -> source.sendSystemMessage(Component.literal(error)))) {
             return 0;
         }
 

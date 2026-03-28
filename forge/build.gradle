@@ -12,11 +12,8 @@ architectury {
 }
 
 loom {
-    accessWidenerPath = project(":common").loom.accessWidenerPath
-
     forge {
-        convertAccessWideners = true
-        extraAccessWideners.add loom.accessWidenerPath.get().asFile.name
+        mixinConfig "dynamickeybinds-common.mixins.json"
     }
 }
 
@@ -93,8 +90,43 @@ def modrinthToken = ((project.findProperty("modrinthApiToken") ?: System.getenv(
 def curseforgeToken = ((project.findProperty("curseforgeApiToken") ?: System.getenv("CURSEFORGE_TOKEN")) ?: "").toString()
 def modrinthProjectId = (project.findProperty("modrinthProjectId") ?: "").toString()
 def curseforgeProjectId = (project.findProperty("curseforgeProjectId") ?: "").toString()
-def releaseType = (project.findProperty("releaseType") ?: "release").toString()
-def changelogText = (project.findProperty("changelog") ?: "No changelog provided.").toString()
+def publishReleaseType = (project.findProperty("releaseType") ?: "release").toString().trim()
+if (publishReleaseType.isBlank()) {
+    publishReleaseType = "release"
+}
+def changelogOverride = (project.findProperty("changelog") ?: "").toString().trim()
+def changelogFile = rootProject.file("CHANGELOG.md")
+def changelogText = changelogOverride
+
+if (changelogText.isBlank() && changelogFile.exists()) {
+    def changelogContents = changelogFile.getText("UTF-8")
+    def versionHeaderPattern = ~/(?m)^## \[\Q${project.version.toString()}\E\] - .*$/
+    def versionHeaderMatcher = versionHeaderPattern.matcher(changelogContents)
+
+    if (versionHeaderMatcher.find()) {
+        def entryStart = versionHeaderMatcher.start()
+        def nextEntryStart = changelogContents.indexOf("\n## [", versionHeaderMatcher.end())
+        changelogText = (nextEntryStart >= 0
+            ? changelogContents.substring(entryStart, nextEntryStart)
+            : changelogContents.substring(entryStart)
+        ).trim()
+    } else {
+        def firstEntryMatcher = ~/(?m)^## \[.+?\] - .*$/
+        firstEntryMatcher = firstEntryMatcher.matcher(changelogContents)
+        if (firstEntryMatcher.find()) {
+            def entryStart = firstEntryMatcher.start()
+            def nextEntryStart = changelogContents.indexOf("\n## [", firstEntryMatcher.end())
+            changelogText = (nextEntryStart >= 0
+                ? changelogContents.substring(entryStart, nextEntryStart)
+                : changelogContents.substring(entryStart)
+            ).trim()
+        }
+    }
+}
+
+if (changelogText.isBlank()) {
+    changelogText = "No changelog provided."
+}
 
 if (!modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBlank()) {
     modrinth {
@@ -102,7 +134,8 @@ if (!modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBl
         projectId = modrinthProjectId
         versionNumber = project.version.toString()
         versionName = "${project.modID} ${project.version} [Forge]"
-        versionType = releaseType
+        versionType = publishReleaseType
+        changelog = changelogText
         uploadFile = remapJar
         gameVersions = [project.minecraftVersion]
         loaders = ["forge"]
@@ -116,7 +149,7 @@ if (!curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToke
             id = curseforgeProjectId
             changelog = changelogText
             changelogType = "markdown"
-            releaseType = releaseType
+            releaseType = publishReleaseType
             addGameVersion project.minecraftVersion
             addGameVersion "Forge"
             mainArtifact(remapJar.archiveFile.get().asFile) {
@@ -159,4 +192,15 @@ tasks.register("publishToPlatforms") {
     group = "publishing"
     description = "Uploads the Forge artifact to Modrinth and CurseForge."
     dependsOn tasks.named("publishToModrinth"), tasks.named("publishToCurseForge")
+}
+
+tasks.register("printResolvedChangelog") {
+    group = "publishing"
+    description = "Prints the changelog text resolved for publishing."
+    doLast {
+        println "Resolved changelog for ${project.modID} ${project.version} [Forge]:"
+        println "---"
+        println changelogText
+        println "---"
+    }
 }

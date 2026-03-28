@@ -1,6 +1,7 @@
 package dev.munebase.dynamickeybinds.network;
 
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,7 +30,8 @@ public final class CommonPacketCodec {
             int keyCode = buf.readInt();
             String category = buf.readUtf();
             Optional<DynamicKeybindAction> action = readOptionalAction(buf);
-            keybinds.add(new StoredKeybind(id, keyCode, category, action));
+            DisplaySpec displaySpec = readDisplaySpec(buf);
+            keybinds.add(new StoredKeybind(id, keyCode, category, action, displaySpec));
         }
         return new SyncKeybindsPacket(keybinds);
     }
@@ -46,6 +48,7 @@ public final class CommonPacketCodec {
             buf.writeInt(keybind.keyCode());
             buf.writeUtf(keybind.category());
             writeOptionalAction(buf, keybind.action());
+            writeDisplaySpec(buf, keybind.displaySpec());
         }
     }
 
@@ -59,7 +62,8 @@ public final class CommonPacketCodec {
         int keyCode = buf.readInt();
         String category = buf.readUtf();
         Optional<DynamicKeybindAction> action = readOptionalAction(buf);
-        return new AddKeybindPacket(id, keyCode, category, action);
+        DisplaySpec displaySpec = readDisplaySpec(buf);
+        return new AddKeybindPacket(id, keyCode, category, action, displaySpec);
     }
 
     /**
@@ -72,6 +76,7 @@ public final class CommonPacketCodec {
         buf.writeInt(pkt.getKeyCode());
         buf.writeUtf(pkt.getCategory());
         writeOptionalAction(buf, pkt.getAction());
+        writeDisplaySpec(buf, pkt.getDisplaySpec());
     }
 
     /**
@@ -131,5 +136,22 @@ public final class CommonPacketCodec {
             buf.writeUtf(value.actionID());
             buf.writeNbt(value.data());
         }
+    }
+
+    private static DisplaySpec readDisplaySpec(FriendlyByteBuf buf) {
+        try {
+            CompoundTag displayTag = buf.readNbt();
+            if (displayTag == null) {
+                return DisplaySpec.empty();
+            }
+            return DisplaySpec.fromNbt(displayTag);
+        } catch (Exception ignored) {
+            return DisplaySpec.empty();
+        }
+    }
+
+    private static void writeDisplaySpec(FriendlyByteBuf buf, DisplaySpec displaySpec) {
+        DisplaySpec safeSpec = displaySpec == null ? DisplaySpec.empty() : displaySpec;
+        buf.writeNbt(safeSpec.toNbt());
     }
 }

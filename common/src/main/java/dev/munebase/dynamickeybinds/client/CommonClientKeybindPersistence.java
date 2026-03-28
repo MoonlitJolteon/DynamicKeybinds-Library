@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /**
@@ -60,15 +61,18 @@ public final class CommonClientKeybindPersistence {
 
             DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
             for (KeyMapping keyMapping : registry.getAllDynamicKeys()) {
-                String id = KeyMappingUtil.normalizeId(keyMapping.getName());
+                Optional<String> id = registry.getKeyBindId(keyMapping);
+                if (id.isEmpty()) {
+                    continue;
+                }
                 int keyCode = KeyMappingUtil.extractKeyCode(keyMapping);
-                Integer previous = lastSyncedDynamicKeycodes.get(id);
+                Integer previous = lastSyncedDynamicKeycodes.get(id.get());
                 if (previous == null) {
                     continue;
                 }
                 if (previous != keyCode) {
-                    updateSender.accept(id, keyCode);
-                    lastSyncedDynamicKeycodes.put(id, keyCode);
+                    updateSender.accept(id.get(), keyCode);
+                    lastSyncedDynamicKeycodes.put(id.get(), keyCode);
                 }
             }
         } catch (Exception e) {
@@ -120,8 +124,10 @@ public final class CommonClientKeybindPersistence {
     private void snapshotDynamicKeycodes(DynamicKeyRegistry registry) {
         lastSyncedDynamicKeycodes.clear();
         for (KeyMapping keyMapping : registry.getAllDynamicKeys()) {
-            String id = KeyMappingUtil.normalizeId(keyMapping.getName());
-            lastSyncedDynamicKeycodes.put(id, KeyMappingUtil.extractKeyCode(keyMapping));
+            Optional<String> id = registry.getKeyBindId(keyMapping);
+            if (id.isPresent()) {
+                lastSyncedDynamicKeycodes.put(id.get(), KeyMappingUtil.extractKeyCode(keyMapping));
+            }
         }
     }
 

@@ -1,13 +1,9 @@
 package dev.munebase.dynamickeybinds.forge;
 
-import java.util.Optional;
-
 import dev.munebase.dynamickeybinds.DynamicKeyRegistry;
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryImpl;
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
-import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
-import dev.munebase.dynamickeybinds.client.ClientRegistryNetworkBridge;
-import dev.munebase.dynamickeybinds.client.ClientRegistryFactory;
+import dev.munebase.dynamickeybinds.client.CommonClientBootstrap;
 import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
 import dev.munebase.dynamickeybinds.forge.server.ForgeServerEvents;
 import net.minecraftforge.common.MinecraftForge;
@@ -27,24 +23,16 @@ import net.minecraftforge.network.simple.SimpleChannel;
 public class ForgeDynamicKeybindsMod {
     /** Forge-side singleton registry instance. */
     public static final DynamicKeyRegistry REGISTRY = new DynamicKeyRegistryImpl();
-    private static final DynamicKeyRegistry CLIENT_REGISTRY = ClientRegistryFactory.createNetworkedRegistry(new ClientRegistryNetworkBridge() {
-        @Override
-        public void sendAdd(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
-            ForgeNetworking.sendAddKeybindToServer(id, keyCode, category, action);
-        }
-
-        @Override
-        public void sendRemove(String id) {
-            ForgeNetworking.sendRemoveKeybindToServer(id);
-        }
-    });
 
     /**
      * Constructs and initializes the Forge integration.
      */
     public ForgeDynamicKeybindsMod() {
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            DynamicKeyRegistryProvider.setRegistryProvider(ClientRegistryFactory.createProvider(CLIENT_REGISTRY));
+            CommonClientBootstrap.initializeNetworkedRegistry(
+                ForgeNetworking::sendAddKeybindToServer,
+                ForgeNetworking::sendRemoveKeybindToServer
+            );
         } else {
             DynamicKeyRegistryProvider.setRegistryProvider(() -> REGISTRY);
         }

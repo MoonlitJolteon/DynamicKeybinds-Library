@@ -104,6 +104,22 @@ public final class CommonDynamicKeyCommands {
     }
 
     /**
+     * Ensures the dynamic key registry provider is initialized.
+     *
+     * @param onError receives user-facing error message when not initialized
+     * @return true when initialized, false otherwise
+     */
+    public static boolean ensureRegistryInitialized(java.util.function.Consumer<String> onError) {
+        try {
+            DynamicKeyRegistryProvider.getRegistry();
+            return true;
+        } catch (IllegalStateException e) {
+            onError.accept(formatNetworkingNotInitializedMessage());
+            return false;
+        }
+    }
+
+    /**
      * Builds the default debug action payload used when no explicit action is provided.
      *
      * @param id keybind id
@@ -111,6 +127,29 @@ public final class CommonDynamicKeyCommands {
      */
     public static java.util.Optional<DynamicKeybindAction> createDefaultDebugAction(String id, CompoundTag data) {
         return java.util.Optional.of(new DynamicKeybindAction(DEFAULT_HANDLER_ACTION_ID, data));
+    }
+
+    /**
+     * Builds the default debug action payload used when no explicit action is provided.
+     *
+     * @param id keybind id
+     * @return optional action for default handler
+     */
+    public static java.util.Optional<DynamicKeybindAction> createDefaultDebugAction(String id) {
+        CompoundTag data = new CompoundTag();
+        data.putString("KeyID", id);
+        return createDefaultDebugAction(id, data);
+    }
+
+    /**
+     * Resolves action payload for add commands.
+     *
+     * @param id keybind id
+     * @param action explicit action payload
+     * @return explicit action when present; otherwise default debug action
+     */
+    public static java.util.Optional<DynamicKeybindAction> resolveAddAction(String id, java.util.Optional<DynamicKeybindAction> action) {
+        return action.isPresent() ? action : createDefaultDebugAction(id);
     }
 
     /**

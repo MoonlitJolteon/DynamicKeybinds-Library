@@ -1,0 +1,14 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "dev.munebase.dynamickeybinds.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "KeyBindsListMixin",
+    "KeyMappingCompareMixin",
+    "KeyBindsListEntryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

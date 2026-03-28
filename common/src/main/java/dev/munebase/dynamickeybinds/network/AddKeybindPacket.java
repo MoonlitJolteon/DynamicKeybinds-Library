@@ -1,6 +1,7 @@
 package dev.munebase.dynamickeybinds.network;
 
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 
 import java.util.Optional;
 
@@ -9,7 +10,7 @@ import java.util.Optional;
  * 
  * This packet allows clients to register new dynamic keybinds on the server side,
  * which are then persisted and synchronized to all players. It carries the
- * keybind ID, key code, and category information.
+ * keybind ID, key code, category, action, and display metadata.
  * 
  * <p><strong>Direction:</strong> Client -> Server</p>
  * <p><strong>Handler:</strong> Server-side keybind handler (ForgeServerKeybindHandler or FabricServerKeybindHandler)</p>
@@ -27,6 +28,9 @@ public class AddKeybindPacket {
     /** Optional action to execute when the keybind is triggered. */
     private final Optional<DynamicKeybindAction> action;
 
+    /** Optional display metadata for the keybind label. */
+    private final DisplaySpec displaySpec;
+
     /**
      * Construct a new AddKeybindPacket.
      *
@@ -35,7 +39,7 @@ public class AddKeybindPacket {
      * @param category the keybind category
      */
     public AddKeybindPacket(String id, int keyCode, String category) {
-        this(id, keyCode, category, Optional.empty());
+        this(id, keyCode, category, Optional.empty(), DisplaySpec.empty());
     }
 
     /**
@@ -47,10 +51,24 @@ public class AddKeybindPacket {
      * @param action optional action payload
      */
     public AddKeybindPacket(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
+        this(id, keyCode, category, action, DisplaySpec.empty());
+    }
+
+    /**
+     * Construct a new AddKeybindPacket with action and display metadata.
+     *
+     * @param id unique keybind identifier
+     * @param keyCode the GLFW key code
+     * @param category the keybind category
+     * @param action optional action payload
+     * @param displaySpec optional display metadata
+     */
+    public AddKeybindPacket(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
         this.id = id;
         this.keyCode = keyCode;
         this.category = category;
         this.action = action == null ? Optional.empty() : action;
+        this.displaySpec = displaySpec == null ? DisplaySpec.empty() : displaySpec;
     }
 
     /**
@@ -88,5 +106,13 @@ public class AddKeybindPacket {
     public Optional<DynamicKeybindAction> getAction() {
         return action;
     }
-}
 
+    /**
+     * Get the display metadata.
+     *
+     * @return display spec
+     */
+    public DisplaySpec getDisplaySpec() {
+        return displaySpec;
+    }
+}
