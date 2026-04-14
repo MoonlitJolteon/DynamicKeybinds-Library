@@ -128,7 +128,7 @@ if (!modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBl
         token = modrinthToken
         projectId = modrinthProjectId
         versionNumber = project.version.toString()
-        versionName = "${project.modID} ${project.version} [Fabric]"
+        versionName = "${project.modID} ${project.version}-fabric"
         versionType = publishReleaseType
         changelog = changelogText
         uploadFile = remapJar
@@ -148,7 +148,7 @@ if (!curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToke
             addGameVersion project.minecraftVersion
             addGameVersion "Fabric"
             mainArtifact(remapJar.archiveFile.get().asFile) {
-                displayName = "${project.modID} ${project.version} [Fabric]"
+                displayName = "${project.modID} ${project.version}-fabric"
             }
         }
         options {

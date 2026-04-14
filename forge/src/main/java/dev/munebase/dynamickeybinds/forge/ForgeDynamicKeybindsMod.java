@@ -1,8 +1,5 @@
 package dev.munebase.dynamickeybinds.forge;
 
-import dev.munebase.dynamickeybinds.DynamicKeyRegistry;
-import dev.munebase.dynamickeybinds.DynamicKeyRegistryImpl;
-import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
 import dev.munebase.dynamickeybinds.client.CommonClientBootstrap;
 import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
 import dev.munebase.dynamickeybinds.forge.server.ForgeServerEvents;
@@ -21,9 +18,6 @@ import net.minecraftforge.network.simple.SimpleChannel;
  */
 @Mod("dynamickeybinds")
 public class ForgeDynamicKeybindsMod {
-    /** Forge-side singleton registry instance. */
-    public static final DynamicKeyRegistry REGISTRY = new DynamicKeyRegistryImpl();
-
     /**
      * Constructs and initializes the Forge integration.
      */
@@ -33,8 +27,6 @@ public class ForgeDynamicKeybindsMod {
                 ForgeNetworking::sendAddKeybindToServer,
                 ForgeNetworking::sendRemoveKeybindToServer
             );
-        } else {
-            DynamicKeyRegistryProvider.setRegistryProvider(() -> REGISTRY);
         }
         
         // Client-side event handlers are automatically registered by Forge via @Mod.EventBusSubscriber annotations

@@ -133,7 +133,7 @@ if (!modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBl
         token = modrinthToken
         projectId = modrinthProjectId
         versionNumber = project.version.toString()
-        versionName = "${project.modID} ${project.version} [Forge]"
+        versionName = "${project.modID} ${project.version}-forge"
         versionType = publishReleaseType
         changelog = changelogText
         uploadFile = remapJar
@@ -153,7 +153,7 @@ if (!curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToke
             addGameVersion project.minecraftVersion
             addGameVersion "Forge"
             mainArtifact(remapJar.archiveFile.get().asFile) {
-                displayName = "${project.modID} ${project.version} [Forge]"
+                displayName = "${project.modID} ${project.version}-forge"
             }
         }
         options {
