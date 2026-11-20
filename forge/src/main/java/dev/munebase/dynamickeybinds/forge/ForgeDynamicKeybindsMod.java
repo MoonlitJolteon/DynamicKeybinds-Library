@@ -3,6 +3,8 @@ package dev.munebase.dynamickeybinds.forge;
 import dev.munebase.dynamickeybinds.client.CommonClientBootstrap;
 import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
 import dev.munebase.dynamickeybinds.forge.server.ForgeServerEvents;
+import dev.munebase.dynamickeybinds.forge.server.ForgeServerKeybindHandler;
+import dev.munebase.dynamickeybinds.server.DynamicKeyServerApi;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.common.Mod;
@@ -22,6 +24,8 @@ public class ForgeDynamicKeybindsMod {
      * Constructs and initializes the Forge integration.
      */
     public ForgeDynamicKeybindsMod() {
+        DynamicKeyServerApi.setRegistry(ForgeServerKeybindHandler.registry());
+
         if (FMLEnvironment.dist == Dist.CLIENT) {
             CommonClientBootstrap.initializeNetworkedRegistry(
                 ForgeNetworking::sendAddKeybindToServer,

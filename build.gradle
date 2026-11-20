@@ -31,9 +31,9 @@ allprojects {
     apply plugin: "architectury-plugin"
     apply plugin: "maven-publish"
 
-    version = project.modVersion
     group = project.mavenGroup
-
+    version = project.modVersion
+    
     repositories {
         mavenCentral()
         maven { url "https://maven.fabricmc.net/" }

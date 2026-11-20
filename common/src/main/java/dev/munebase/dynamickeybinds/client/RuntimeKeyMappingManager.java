@@ -67,7 +67,7 @@ public final class RuntimeKeyMappingManager {
 
     private static void applyMappings(Minecraft minecraft, KeyMapping[] updated, Logger logger) {
         try {
-            Field field = resolveKeyMappingsField(logger);
+            Field field = resolveKeyMappingsField(minecraft, logger);
             if (field == null) {
                 return;
             }
@@ -77,13 +77,14 @@ public final class RuntimeKeyMappingManager {
         }
     }
 
-    private static Field resolveKeyMappingsField(Logger logger) {
+    private static Field resolveKeyMappingsField(Minecraft minecraft, Logger logger) {
         Field cached = resolvedKeyMappingsField;
         if (cached != null) {
             return cached;
         }
 
         Class<?> optionsClass = net.minecraft.client.Options.class;
+        KeyMapping[] currentKeyMappings = minecraft.options.keyMappings;
         String[] candidates = new String[] {"keyMappings", "allKeys", "field_1843", "f_92059_"};
 
         for (String candidate : candidates) {
@@ -91,27 +92,42 @@ public final class RuntimeKeyMappingManager {
                 Field field = optionsClass.getDeclaredField(candidate);
                 if (field.getType().isArray() && field.getType().getComponentType() == KeyMapping.class) {
                     field.setAccessible(true);
-                    resolvedKeyMappingsField = field;
-                    return field;
+                    Object value = field.get(minecraft.options);
+                    if (value == currentKeyMappings) {
+                        resolvedKeyMappingsField = field;
+                        return field;
+                    }
                 }
             } catch (NoSuchFieldException ignored) {
+            } catch (IllegalAccessException ignored) {
             }
         }
 
         Field discovered = null;
         for (Field field : optionsClass.getDeclaredFields()) {
             if (field.getType().isArray() && field.getType().getComponentType() == KeyMapping.class) {
-                if (discovered != null) {
-                    logger.error("Could not resolve runtime key mappings field: multiple KeyMapping[] fields found in Options");
-                    return null;
+                try {
+                    field.setAccessible(true);
+                    if (field.get(minecraft.options) == currentKeyMappings) {
+                        resolvedKeyMappingsField = field;
+                        return field;
+                    }
+                } catch (IllegalAccessException ignored) {
                 }
-                discovered = field;
+
+                if (discovered == null) {
+                    discovered = field;
+                }
             }
         }
 
         if (discovered == null) {
             logger.error("Could not resolve runtime key mappings field: no KeyMapping[] field found in Options");
             return null;
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Resolved runtime key mappings field by fallback: {}", discovered.getName());
         }
 
         discovered.setAccessible(true);

@@ -1,5 +1,7 @@
 package dev.munebase.dynamickeybinds.server;
 
+import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
+import dev.munebase.dynamickeybinds.model.DisplaySpec;
 import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
@@ -10,6 +12,7 @@ import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /**
@@ -54,24 +57,35 @@ public final class CommonServerKeybindHandler {
      * @param pkt The add keybind packet
      */
     public void handleAddKeybind(ServerPlayer player, AddKeybindPacket pkt) {
+        registerForPlayer(player, pkt.getId(), pkt.getKeyCode(), pkt.getCategory(), pkt.getAction(), pkt.getDisplaySpec());
+    }
+
+    /**
+     * Registers a keybind for a specific player.
+     *
+     * @return true when the keybind was added, false otherwise
+     */
+    public boolean registerForPlayer(ServerPlayer player, String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
         try {
             String playerUUID = player.getUUID().toString();
             Path worldDataPath = getWorldDataPath(player);
             List<StoredKeybind> keybinds = ServerKeybindPersistence.loadKeybinds(worldDataPath, playerUUID);
 
             for (StoredKeybind kb : keybinds) {
-                if (kb.id().equals(pkt.getId())) {
-                    logger.warn("Keybind {} already exists for player {}", pkt.getId(), playerUUID);
-                    return;
+                if (kb.id().equals(id)) {
+                    logger.warn("Keybind {} already exists for player {}", id, playerUUID);
+                    return false;
                 }
             }
 
-            keybinds.add(new StoredKeybind(pkt.getId(), pkt.getKeyCode(), pkt.getCategory(), pkt.getAction(), pkt.getDisplaySpec()));
+            keybinds.add(new StoredKeybind(id, keyCode, category, action == null ? Optional.empty() : action, displaySpec == null ? DisplaySpec.empty() : displaySpec));
             ServerKeybindPersistence.saveKeybinds(worldDataPath, playerUUID, keybinds);
             syncSender.accept(player, keybinds);
-            logger.info("Server: Added keybind {} for player {}", pkt.getId(), playerUUID);
+            logger.info("Server: Added keybind {} for player {}", id, playerUUID);
+            return true;
         } catch (Exception e) {
             logger.error("Error handling add keybind", e);
+            return false;
         }
     }
 
@@ -81,22 +95,33 @@ public final class CommonServerKeybindHandler {
      * @param pkt The remove keybind packet
      */
     public void handleRemoveKeybind(ServerPlayer player, RemoveKeybindPacket pkt) {
+        unregisterForPlayer(player, pkt.getId());
+    }
+
+    /**
+     * Unregisters a keybind for a specific player.
+     *
+     * @return true when the keybind was removed, false otherwise
+     */
+    public boolean unregisterForPlayer(ServerPlayer player, String id) {
         try {
             String playerUUID = player.getUUID().toString();
             Path worldDataPath = getWorldDataPath(player);
             List<StoredKeybind> keybinds = ServerKeybindPersistence.loadKeybinds(worldDataPath, playerUUID);
 
-            boolean removed = keybinds.removeIf(kb -> kb.id().equals(pkt.getId()));
+            boolean removed = keybinds.removeIf(kb -> kb.id().equals(id));
             if (!removed) {
-                logger.warn("Keybind {} not found for player {}", pkt.getId(), playerUUID);
-                return;
+                logger.warn("Keybind {} not found for player {}", id, playerUUID);
+                return false;
             }
 
             ServerKeybindPersistence.saveKeybinds(worldDataPath, playerUUID, keybinds);
             syncSender.accept(player, keybinds);
-            logger.info("Server: Removed keybind {} for player {}", pkt.getId(), playerUUID);
+            logger.info("Server: Removed keybind {} for player {}", id, playerUUID);
+            return true;
         } catch (Exception e) {
             logger.error("Error handling remove keybind", e);
+            return false;
         }
     }
 

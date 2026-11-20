@@ -5,6 +5,8 @@ import dev.munebase.dynamickeybinds.DynamicKeyRegistryImpl;
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
 import dev.munebase.dynamickeybinds.fabric.network.FabricNetworking;
 import dev.munebase.dynamickeybinds.fabric.server.FabricServerEvents;
+import dev.munebase.dynamickeybinds.server.DynamicKeyServerApi;
+import dev.munebase.dynamickeybinds.fabric.server.FabricServerKeybindHandler;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,8 @@ public class FabricCommonInitializer implements ModInitializer {
     @Override
     public void onInitialize() {
         LOGGER.info("Initializing Fabric common");
+
+        DynamicKeyServerApi.setRegistry(FabricServerKeybindHandler.registry());
 
         // Register server-side handlers for both dedicated and integrated servers.
         FabricNetworking.registerServerHandlers();
