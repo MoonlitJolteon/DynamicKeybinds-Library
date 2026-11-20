@@ -34,6 +34,15 @@ dependencies {
 
     // For full online-mode testing
     runtimeOnly 'me.djtheredstoner:DevAuth-forge-latest:1.2.1'
+
+    // modLocalRuntime "curse.maven:too-many-keybinds-1133683:6015488"
+}
+
+repositories {
+    exclusiveContent {
+        forRepository { maven { url "https://cursemaven.com" } }
+        filter { includeGroup "curse.maven" }
+    }
 }
 
 processResources {

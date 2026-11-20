@@ -6,7 +6,8 @@
   "client": [
     "KeyBindsListMixin",
     "KeyMappingCompareMixin",
-    "KeyBindsListEntryMixin"
+    "KeyBindsListEntryMixin",
+    "OptionsSubScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

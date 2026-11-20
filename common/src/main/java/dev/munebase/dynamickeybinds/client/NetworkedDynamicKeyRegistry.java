@@ -11,7 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -84,15 +86,38 @@ public final class NetworkedDynamicKeyRegistry implements ServerSynchronizedDyna
     public void applyServerSnapshot(List<StoredKeybind> serverKeybinds, Logger logger) {
         suppressNetwork.set(true);
         try {
-            clearLocalState(logger);
+            Map<String, StoredKeybind> incoming = new LinkedHashMap<>();
             for (StoredKeybind entry : serverKeybinds) {
-                String cleanId = KeyMappingUtil.normalizeId(entry.id());
-                try {
-                    KeyMapping keyMapping = localRegistry.registerDynamicKey(cleanId, entry.keyCode(), entry.category(), entry.action(), entry.displaySpec());
-                    RuntimeKeyMappingManager.registerRuntimeKey(keyMapping, logger);
-                } catch (IllegalArgumentException e) {
-                    logger.error("Failed to register synced keybind: {}", cleanId, e);
+                incoming.put(KeyMappingUtil.normalizeId(entry.id()), entry);
+            }
+
+            // Remove keys the server no longer has, or whose category changed (KeyMapping category is immutable)
+            for (KeyMapping keyMapping : new ArrayList<>(localRegistry.getAllDynamicKeys())) {
+                StoredKeybind entry = localRegistry.getKeyBindId(keyMapping).map(incoming::get).orElse(null);
+                if (entry == null || !keyMapping.getCategory().equals(DynamicKeyMapping.categoryKey(entry.category()))) {
+                    localRegistry.unregisterDynamicKey(keyMapping);
+                    RuntimeKeyMappingManager.unregisterRuntimeKey(keyMapping, logger);
                 }
+            }
+
+            // Update survivors in place so other mods' references (e.g. TooManyKeybinds buttons) stay valid
+            boolean keysChanged = false;
+            for (Map.Entry<String, StoredKeybind> e : incoming.entrySet()) {
+                String cleanId = e.getKey();
+                StoredKeybind entry = e.getValue();
+                try {
+                    if (localRegistry.getKeyBindById(cleanId) != null) {
+                        keysChanged |= localRegistry.updateDynamicKey(cleanId, entry.keyCode(), entry.action(), entry.displaySpec());
+                    } else {
+                        KeyMapping keyMapping = localRegistry.registerDynamicKey(cleanId, entry.keyCode(), entry.category(), entry.action(), entry.displaySpec());
+                        RuntimeKeyMappingManager.registerRuntimeKey(keyMapping, logger);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    logger.error("Failed to apply synced keybind: {}", cleanId, ex);
+                }
+            }
+            if (keysChanged) {
+                KeyMapping.resetMapping();
             }
         } finally {
             suppressNetwork.set(false);

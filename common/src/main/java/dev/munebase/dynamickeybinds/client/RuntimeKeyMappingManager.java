@@ -1,5 +1,6 @@
 package dev.munebase.dynamickeybinds.client;
 
+import dev.munebase.dynamickeybinds.compat.TooManyKeybindsCompat;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ public final class RuntimeKeyMappingManager {
         updated[current.length] = keyMapping;
         applyMappings(minecraft, updated, logger);
         KeyMapping.resetMapping();
+        TooManyKeybindsCompat.refreshPages(logger);
     }
 
     /**
@@ -62,6 +64,7 @@ public final class RuntimeKeyMappingManager {
         if (updated.length != current.length) {
             applyMappings(minecraft, updated, logger);
             KeyMapping.resetMapping();
+            TooManyKeybindsCompat.refreshPages(logger);
         }
     }
 

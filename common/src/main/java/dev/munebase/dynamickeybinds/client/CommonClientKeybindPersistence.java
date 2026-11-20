@@ -28,6 +28,17 @@ public final class CommonClientKeybindPersistence {
     private String currentPlayerUUID;
     private final Map<String, Integer> lastSyncedDynamicKeycodes = new HashMap<>();
 
+    // Set when the Controls screen closes; other mods (e.g. TooManyKeybinds) temporarily rebind keys and must not be persisted
+    private static volatile boolean rebindSyncRequested = false;
+
+    /**
+     * Requests that dynamic key rebinds be sent to the server on the next client tick.
+     * Called when the vanilla Controls screen closes, which is where players rebind keys.
+     */
+    public static void requestRebindSync() {
+        rebindSyncRequested = true;
+    }
+
     public CommonClientKeybindPersistence(Logger logger, String platformName, BiConsumer<String, Integer> updateSender) {
         this.logger = logger;
         this.platformName = platformName;
@@ -55,9 +66,10 @@ public final class CommonClientKeybindPersistence {
     public void pollAndSyncDynamicKeyRebinds() {
         try {
             Minecraft minecraft = Minecraft.getInstance();
-            if (minecraft.player == null || minecraft.getConnection() == null) {
+            if (!rebindSyncRequested || minecraft.player == null || minecraft.getConnection() == null) {
                 return;
             }
+            rebindSyncRequested = false;
 
             DynamicKeyRegistry registry = DynamicKeyRegistryProvider.getRegistry();
             for (KeyMapping keyMapping : registry.getAllDynamicKeys()) {

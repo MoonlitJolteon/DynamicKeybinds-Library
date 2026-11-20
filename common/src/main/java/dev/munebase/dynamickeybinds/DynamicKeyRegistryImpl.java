@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.client.DynamicKeyMapping;
 import dev.munebase.dynamickeybinds.model.DisplaySpec;
+import dev.munebase.dynamickeybinds.util.KeyMappingUtil;
 import net.minecraft.client.KeyMapping;
 import org.lwjgl.glfw.GLFW;
 import java.util.*;
@@ -104,6 +105,42 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
         allDynamicKeys.add(keyMapping);
 
         return keyMapping;
+    }
+
+    /**
+     * Update an existing keybind's key, action and display metadata in place, keeping the same
+     * KeyMapping instance so other mods holding a reference to it stay valid.
+     * The category cannot change in place; unregister and re-register for that.
+     *
+     * @param id the keybind ID
+     * @param keyCode the new GLFW key code
+     * @param action the new action
+     * @param displaySpec the new display metadata
+     * @return true if the bound key changed (caller should call {@link KeyMapping#resetMapping()})
+     * @throws IllegalArgumentException if the ID is not registered or keyCode is invalid
+     */
+    public boolean updateDynamicKey(String id, int keyCode, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
+        KeyMapping keyMapping = keyBindingsById.get(id);
+        if (keyMapping == null) {
+            throw new IllegalArgumentException("Keybind with id '" + id + "' is not registered");
+        }
+
+        if (!isValidKeyCode(keyCode)) {
+            throw new IllegalArgumentException("Invalid keycode: " + keyCode + ". Use GLFW key constants (e.g. 32-348).");
+        }
+
+        DisplaySpec safeDisplaySpec = displaySpec == null ? DisplaySpec.empty() : displaySpec;
+        actionsByKeyBinding.put(keyMapping, action);
+        displaySpecById.put(id, safeDisplaySpec);
+        if (keyMapping instanceof DynamicKeyMapping dynamicKeyMapping) {
+            dynamicKeyMapping.setDisplaySpec(safeDisplaySpec);
+        }
+
+        if (KeyMappingUtil.extractKeyCode(keyMapping) == keyCode) {
+            return false;
+        }
+        keyMapping.setKey(InputConstants.Type.KEYSYM.getOrCreate(keyCode));
+        return true;
     }
 
     /**

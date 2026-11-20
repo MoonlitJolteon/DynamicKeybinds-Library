@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-11-20
+
+### Added
+- TooManyKeybinds compatibility: dynamic keybinds now show up in its menu (optional, no dependency)
+
+### Fixed
+- Temporary rebinds made by other mods (e.g. TooManyKeybinds) were saved to the server; rebinds now only sync when the Controls screen closes
+- Server sync replaced keybind objects instead of updating them, leaving other mods holding stale references
+
 ## [0.1.2] - 2026-04-14
 
 ### Added

@@ -11,8 +11,15 @@ public class DynamicKeyMapping extends KeyMapping {
     private DisplaySpec displaySpec;
 
     public DynamicKeyMapping(String id, int keyCode, String category, DisplaySpec displaySpec) {
-        super("key." + id, InputConstants.Type.KEYSYM, keyCode, "category." + category);
+        super("key." + id, InputConstants.Type.KEYSYM, keyCode, categoryKey(category));
         this.displaySpec = displaySpec == null ? DisplaySpec.empty() : displaySpec;
+    }
+
+    /**
+     * The KeyMapping category string used for a dynamic keybind category.
+     */
+    public static String categoryKey(String category) {
+        return "category." + category;
     }
 
     public DisplaySpec getDisplaySpec() {
