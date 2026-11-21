@@ -24,7 +24,8 @@ public class FabricCommonInitializer implements ModInitializer {
 
         DynamicKeyServerApi.setRegistry(FabricServerKeybindHandler.registry());
 
-        // Register server-side handlers for both dedicated and integrated servers.
+        // Payload types must be known on both sides; server handlers serve dedicated and integrated servers.
+        FabricNetworking.registerPayloadTypes();
         FabricNetworking.registerServerHandlers();
         FabricServerEvents.register();
     }

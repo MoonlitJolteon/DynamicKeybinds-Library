@@ -1,6 +1,6 @@
 # DynamicKeybinds
 
-A multi-platform Minecraft 1.20.1 mod (Fabric + Forge/NeoForge) that allows other mods to create keybinds at runtime after the game fully loads.
+A multi-platform Minecraft 1.21.1 mod (Fabric + NeoForge) that allows other mods to create keybinds at runtime after the game fully loads.
 
 ## Project Structure
 
@@ -14,9 +14,9 @@ A multi-platform Minecraft 1.20.1 mod (Fabric + Forge/NeoForge) that allows othe
   - `FabricDynamicKeyInitializer`: Fabric ClientModInitializer
   - `FabricCommandRegistry`: Fabric command registration
 
-- **forge/**: Forge/NeoForge-specific wiring and entrypoints
-  - `ForgeClientEvents`: Forge event handlers
-  - `ForgeCommandRegistry`: Forge command registration
+- **neoforge/**: NeoForge-specific wiring and entrypoints
+  - `NeoForgeClientEvents`: NeoForge event handlers
+  - `NeoForgeCommandRegistry`: NeoForge command registration
 
 ## Features
 
@@ -34,11 +34,11 @@ A multi-platform Minecraft 1.20.1 mod (Fabric + Forge/NeoForge) that allows othe
 
 Output JARs will be in:
 - `fabric/build/libs/dynamickeybinds-fabric-*.jar`
-- `forge/build/libs/dynamickeybinds-forge-*.jar`
+- `neoforge/build/libs/dynamickeybinds-neoforge-*.jar`
 
 ## Using with JitPack
 
-This repository is configured for JitPack via `jitpack.yml` (Java 17 + Gradle publish to local Maven).
+This repository is configured for JitPack via `jitpack.yml` (Java 21 + Gradle publish to local Maven).
 
 ### 1) Create a Git tag and push
 
@@ -67,7 +67,7 @@ dependencies {
 
   // Loader-specific modules (if needed directly)
   // implementation "com.github.<GitHubUser>.DynamicKeybinds:fabric:v0.0.1"
-  // implementation "com.github.<GitHubUser>.DynamicKeybinds:forge:v0.0.1"
+  // implementation "com.github.<GitHubUser>.DynamicKeybinds:neoforge:v0.0.1"
 }
 ```
 
@@ -102,17 +102,18 @@ export CURSEFORGE_TOKEN=...
 ### 3) Run publish tasks
 
 - Fabric only: `./gradlew :fabric:publishToPlatforms`
-- Forge only: `./gradlew :forge:publishToPlatforms`
+- NeoForge only: `./gradlew :neoforge:publishToPlatforms`
 - Both loaders: `./gradlew publishAllPlatforms`
 
 You can also run single-platform endpoints directly:
 - `:fabric:publishToModrinth`, `:fabric:publishToCurseForge`
-- `:forge:publishToModrinth`, `:forge:publishToCurseForge`
+- `:neoforge:publishToModrinth`, `:neoforge:publishToCurseForge`
 
 ## Version
 
-- **Minecraft**: 1.20.1 (exact)
-- **Mod Version**: 0.1.0
+- **Minecraft**: 1.21.1 (1.20.1 builds live on the `main` branch)
+- **Java**: 21
+- **Mod Version**: 0.1.3
 - **Group**: dev.munebase.dynamickeybinds
 
 ## License

@@ -2,7 +2,7 @@ package dev.munebase.dynamickeybinds.mixin;
 
 import dev.munebase.dynamickeybinds.client.DynamicKeyMapping;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.gui.screens.controls.KeyBindsList;
+import net.minecraft.client.gui.screens.options.controls.KeyBindsList;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

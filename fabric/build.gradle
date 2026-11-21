@@ -22,9 +22,6 @@ configurations {
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.fabricLoaderVersion}"
     modApi "net.fabricmc.fabric-api:fabric-api:${project.fabricApiVersion}"
-    modApi("dev.architectury:architectury-fabric:${project.architecturyVersion}") {
-        exclude group: "net.fabricmc", module: "fabric-loader"
-    }
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
@@ -95,7 +92,7 @@ def changelogText = changelogOverride
 
 if (changelogText.isBlank() && changelogFile.exists()) {
     def changelogContents = changelogFile.getText("UTF-8")
-    def versionHeaderPattern = ~/(?m)^## \[\Q${project.version.toString()}\E\] - .*$/
+    def versionHeaderPattern = ~/(?m)^## \[\Q${project.modVersion}\E\] - .*$/
     def versionHeaderMatcher = versionHeaderPattern.matcher(changelogContents)
 
     if (versionHeaderMatcher.find()) {
@@ -147,6 +144,8 @@ if (!curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToke
             releaseType = publishReleaseType
             addGameVersion project.minecraftVersion
             addGameVersion "Fabric"
+            addGameVersion "Client"
+            addGameVersion "Server"
             mainArtifact(remapJar.archiveFile.get().asFile) {
                 displayName = "${project.modID} ${project.version}-fabric"
             }

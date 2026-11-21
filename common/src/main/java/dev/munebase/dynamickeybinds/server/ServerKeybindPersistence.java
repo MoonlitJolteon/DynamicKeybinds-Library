@@ -6,6 +6,7 @@ import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +131,7 @@ public final class ServerKeybindPersistence {
             rootTag.put("players", playersTag);
 
             // Write back to file
-            NbtIo.writeCompressed(rootTag, keybindsFile.toFile());
+            NbtIo.writeCompressed(rootTag, keybindsFile);
             LOGGER.info("Server: Saved {} keybinds for player {}", keybinds.size(), playerUUID);
         } catch (Exception e) {
             LOGGER.error("Error saving server keybinds", e);
@@ -139,7 +140,7 @@ public final class ServerKeybindPersistence {
 
     private static CompoundTag readRootTag(Path keybindsFile) {
         try {
-            return NbtIo.readCompressed(keybindsFile.toFile());
+            return NbtIo.readCompressed(keybindsFile, NbtAccounter.unlimitedHeap());
         } catch (IOException e) {
             LOGGER.error("Could not read server keybinds file {}", keybindsFile, e);
             return null;

@@ -9,7 +9,6 @@ loom {
 
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.fabricLoaderVersion}"
-    modApi "dev.architectury:architectury:${project.architecturyVersion}"
     implementation "com.google.code.findbugs:jsr305:3.0.2"
 }
 

@@ -1,5 +1,10 @@
 package dev.munebase.dynamickeybinds.network;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+
 /**
  * Network packet sent from client to server to request removing a keybind.
  * 
@@ -7,9 +12,17 @@ package dev.munebase.dynamickeybinds.network;
  * from the server-side registry and the removal is synchronized to all clients.
  * 
  * <p><strong>Direction:</strong> Client -> Server</p>
- * <p><strong>Handler:</strong> Server-side keybind handler (ForgeServerKeybindHandler or FabricServerKeybindHandler)</p>
+ * <p><strong>Handler:</strong> Server-side keybind handler (NeoForgeServerKeybindHandler or FabricServerKeybindHandler)</p>
  */
-public class RemoveKeybindPacket {
+public class RemoveKeybindPacket implements CustomPacketPayload {
+    public static final Type<RemoveKeybindPacket> TYPE =
+        new Type<>(ResourceLocation.fromNamespaceAndPath("dynamickeybinds", "remove_keybind"));
+
+    public static final StreamCodec<FriendlyByteBuf, RemoveKeybindPacket> STREAM_CODEC = StreamCodec.of(
+        (buf, packet) -> CommonPacketCodec.encodeRemoveKeybind(packet, buf),
+        CommonPacketCodec::decodeRemoveKeybind
+    );
+
     /** ID of the keybind to remove */
     private final String id;
 
@@ -30,5 +43,9 @@ public class RemoveKeybindPacket {
     public String getId() {
         return id;
     }
-}
 
+    @Override
+    public Type<RemoveKeybindPacket> type() {
+        return TYPE;
+    }
+}

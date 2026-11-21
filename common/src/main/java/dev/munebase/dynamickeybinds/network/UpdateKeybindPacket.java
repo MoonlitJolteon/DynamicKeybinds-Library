@@ -1,5 +1,10 @@
 package dev.munebase.dynamickeybinds.network;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+
 /**
  * Network packet sent from client to server to request updating a keybind's key code.
  * 
@@ -8,9 +13,17 @@ package dev.munebase.dynamickeybinds.network;
  * persisted on the server and synchronized to all clients.
  * 
  * <p><strong>Direction:</strong> Client -> Server</p>
- * <p><strong>Handler:</strong> ForgeServerKeybindHandler or FabricServerKeybindHandler</p>
+ * <p><strong>Handler:</strong> NeoForgeServerKeybindHandler or FabricServerKeybindHandler</p>
  */
-public class UpdateKeybindPacket {
+public class UpdateKeybindPacket implements CustomPacketPayload {
+    public static final Type<UpdateKeybindPacket> TYPE =
+        new Type<>(ResourceLocation.fromNamespaceAndPath("dynamickeybinds", "update_keybind"));
+
+    public static final StreamCodec<FriendlyByteBuf, UpdateKeybindPacket> STREAM_CODEC = StreamCodec.of(
+        (buf, packet) -> CommonPacketCodec.encodeUpdateKeybind(packet, buf),
+        CommonPacketCodec::decodeUpdateKeybind
+    );
+
     /** ID of the keybind to update */
     private final String id;
     
@@ -44,5 +57,10 @@ public class UpdateKeybindPacket {
      */
     public int getKeyCode() {
         return keyCode;
+    }
+
+    @Override
+    public Type<UpdateKeybindPacket> type() {
+        return TYPE;
     }
 }

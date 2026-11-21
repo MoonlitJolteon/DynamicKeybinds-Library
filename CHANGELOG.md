@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.3] - 2026-11-20
 
 ### Added
+- Minecraft 1.21.1 support for Fabric and NeoForge (1.21.1 builds are versioned `0.1.3+1.21.1`)
 - TooManyKeybinds compatibility: dynamic keybinds now show up in its menu (optional, no dependency)
 
 ### Fixed

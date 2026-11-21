@@ -32,23 +32,23 @@ allprojects {
     apply plugin: "maven-publish"
 
     group = project.mavenGroup
-    version = project.modVersion
-    
+    version = "${project.modVersion}+${project.minecraftVersion}"
+
     repositories {
         mavenCentral()
         maven { url "https://maven.fabricmc.net/" }
         maven { url "https://maven.architectury.dev/" }
-        maven { url "https://maven.minecraftforge.net/" }
+        maven { url "https://maven.neoforged.net/releases/" }
         maven { url "https://pkgs.dev.azure.com/djtheredstoner/DevAuth/_packaging/public/maven/v1" }
     }
 
     tasks.withType(JavaCompile) {
         options.encoding = "UTF-8"
-        options.release = 17
+        options.release = 21
     }
 
     java {
-        java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+        java.toolchain.languageVersion = JavaLanguageVersion.of(21)
         withSourcesJar()
     }
 
@@ -67,9 +67,9 @@ ext.getArtifactId = { platform ->
 
 tasks.register("publishAllPlatforms") {
     group = "publishing"
-    description = "Uploads Fabric and Forge artifacts to Modrinth and CurseForge."
+    description = "Uploads Fabric and NeoForge artifacts to Modrinth and CurseForge."
     dependsOn(
         ":fabric:publishToPlatforms",
-        ":forge:publishToPlatforms"
+        ":neoforge:publishToPlatforms"
     )
 }

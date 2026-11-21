@@ -1,4 +1,4 @@
-package dev.munebase.dynamickeybinds.forge;
+package dev.munebase.dynamickeybinds.neoforge;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -7,26 +7,26 @@ import dev.munebase.dynamickeybinds.command.CommonDynamicKeyCommands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterClientCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.util.Optional;
 
 /**
- * Registers Forge client-side commands for dynamic keybind management.
+ * Registers NeoForge client-side commands for dynamic keybind management.
  */
-@Mod.EventBusSubscriber(modid = "dynamickeybinds", value = Dist.CLIENT)
-public final class ForgeCommandRegistry {
+@EventBusSubscriber(modid = "dynamickeybinds", value = Dist.CLIENT)
+public final class NeoForgeCommandRegistry {
 
-    private ForgeCommandRegistry() {
+    private NeoForgeCommandRegistry() {
     }
 
     /**
      * Registers the `/dynamickey` command tree.
      *
-     * @param event Forge client command registration event
+     * @param event NeoForge client command registration event
      */
     @SubscribeEvent
     public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {

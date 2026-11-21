@@ -1,8 +1,8 @@
 jdk:
-  - openjdk17
+  - openjdk21
 
 before_install:
   - chmod +x gradlew
 
 install:
-  - ./gradlew --no-daemon :common:publishToMavenLocal :fabric:publishToMavenLocal :forge:publishToMavenLocal -x test
+  - ./gradlew --no-daemon :common:publishToMavenLocal :fabric:publishToMavenLocal :neoforge:publishToMavenLocal -x test

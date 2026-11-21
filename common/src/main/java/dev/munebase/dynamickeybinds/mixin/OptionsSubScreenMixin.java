@@ -1,8 +1,8 @@
 package dev.munebase.dynamickeybinds.mixin;
 
 import dev.munebase.dynamickeybinds.client.CommonClientKeybindPersistence;
-import net.minecraft.client.gui.screens.OptionsSubScreen;
-import net.minecraft.client.gui.screens.controls.KeyBindsScreen;
+import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

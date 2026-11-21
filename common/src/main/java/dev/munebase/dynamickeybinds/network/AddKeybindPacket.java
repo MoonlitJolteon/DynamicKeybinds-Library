@@ -1,5 +1,10 @@
 package dev.munebase.dynamickeybinds.network;
 
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.model.DisplaySpec;
 
@@ -13,9 +18,17 @@ import java.util.Optional;
  * keybind ID, key code, category, action, and display metadata.
  * 
  * <p><strong>Direction:</strong> Client -> Server</p>
- * <p><strong>Handler:</strong> Server-side keybind handler (ForgeServerKeybindHandler or FabricServerKeybindHandler)</p>
+ * <p><strong>Handler:</strong> Server-side keybind handler (NeoForgeServerKeybindHandler or FabricServerKeybindHandler)</p>
  */
-public class AddKeybindPacket {
+public class AddKeybindPacket implements CustomPacketPayload {
+    public static final Type<AddKeybindPacket> TYPE =
+        new Type<>(ResourceLocation.fromNamespaceAndPath("dynamickeybinds", "add_keybind"));
+
+    public static final StreamCodec<FriendlyByteBuf, AddKeybindPacket> STREAM_CODEC = StreamCodec.of(
+        (buf, packet) -> CommonPacketCodec.encodeAddKeybind(packet, buf),
+        CommonPacketCodec::decodeAddKeybind
+    );
+
     /** Unique identifier for the keybind (e.g., "mymod:ability_cast") */
     private final String id;
     
@@ -114,5 +127,10 @@ public class AddKeybindPacket {
      */
     public DisplaySpec getDisplaySpec() {
         return displaySpec;
+    }
+
+    @Override
+    public Type<AddKeybindPacket> type() {
+        return TYPE;
     }
 }

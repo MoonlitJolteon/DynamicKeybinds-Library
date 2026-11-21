@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[47,)"
+loaderVersion = "[1,)"
 license = "MIT"
 
 [[mods]]
@@ -11,16 +11,19 @@ description = '''
 DynamicKeybinds lets mods create, sync, and persist custom runtime keybinds tied to the world, not the client.
 '''
 
+[[mixins]]
+config = "dynamickeybinds-common.mixins.json"
+
 [[dependencies.dynamickeybinds]]
-modId = "forge"
-mandatory = true
-versionRange = "[47,)"
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.dynamickeybinds]]
 modId = "minecraft"
-mandatory = true
-versionRange = "[1.20.1,1.20.2)"
+type = "required"
+versionRange = "[1.21.1,1.21.2)"
 ordering = "NONE"
 side = "BOTH"

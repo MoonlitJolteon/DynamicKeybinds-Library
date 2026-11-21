@@ -1,30 +1,27 @@
-package dev.munebase.dynamickeybinds.forge;
+package dev.munebase.dynamickeybinds.neoforge;
 
 import dev.munebase.dynamickeybinds.client.CommonClientKeybindPersistence;
-import dev.munebase.dynamickeybinds.forge.network.ForgeNetworking;
-import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
+import dev.munebase.dynamickeybinds.neoforge.network.NeoForgeNetworking;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = "dynamickeybinds", value = Dist.CLIENT)
-public final class ForgeKeybindPersistence {
+@EventBusSubscriber(modid = "dynamickeybinds", value = Dist.CLIENT)
+public final class NeoForgeKeybindPersistence {
     private static final Logger LOGGER = LoggerFactory.getLogger("DynamicKeybinds");
     private static final CommonClientKeybindPersistence COMMON = new CommonClientKeybindPersistence(
         LOGGER,
-        "Forge",
-        (id, keyCode) -> ForgeNetworking.CHANNEL.sendToServer(
-            new UpdateKeybindPacket(id, keyCode)
-        )
+        "NeoForge",
+        NeoForgeNetworking::sendUpdateKeybindToServer
     );
 
-    private ForgeKeybindPersistence() {
+    private NeoForgeKeybindPersistence() {
     }
 
     public static void handleServerSync(List<StoredKeybind> serverKeybinds) {

@@ -1,165 +1,109 @@
 package dev.munebase.dynamickeybinds.fabric.network;
 
-import dev.munebase.dynamickeybinds.network.SyncKeybindsPacket;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.fabric.FabricKeybindPersistence;
 import dev.munebase.dynamickeybinds.fabric.server.FabricServerKeybindHandler;
 import dev.munebase.dynamickeybinds.model.DisplaySpec;
 import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
-import dev.munebase.dynamickeybinds.network.CommonPacketCodec;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
+import dev.munebase.dynamickeybinds.network.SyncKeybindsPacket;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Optional;
 
-import static io.netty.buffer.Unpooled.buffer;
-
 /**
- * Fabric networking utility for packet registration and transmission.
+ * Fabric networking: payload registration, receivers, and send helpers.
  *
- * Contains client/server receiver registration plus helper methods for sending
- * add/remove/update/sync keybind packets.
+ * <p>Fabric runs receivers on the main thread, so handlers can touch game state directly.
  */
 public final class FabricNetworking {
     private static final Logger LOGGER = LoggerFactory.getLogger("DynamicKeybinds");
-    private static final ResourceLocation SYNC_KEYBINDS_ID = new ResourceLocation("dynamickeybinds", "sync_keybinds");
-    private static final ResourceLocation ADD_KEYBIND_ID = new ResourceLocation("dynamickeybinds", "add_keybind");
-    private static final ResourceLocation REMOVE_KEYBIND_ID = new ResourceLocation("dynamickeybinds", "remove_keybind");
-    private static final ResourceLocation UPDATE_KEYBIND_ID = new ResourceLocation("dynamickeybinds", "update_keybind");
 
     private FabricNetworking() {
+    }
+
+    /**
+     * Registers every payload type. Must run on both sides, before any receivers are registered.
+     */
+    public static void registerPayloadTypes() {
+        PayloadTypeRegistry.playS2C().register(SyncKeybindsPacket.TYPE, SyncKeybindsPacket.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(AddKeybindPacket.TYPE, AddKeybindPacket.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(RemoveKeybindPacket.TYPE, RemoveKeybindPacket.STREAM_CODEC);
+        PayloadTypeRegistry.playC2S().register(UpdateKeybindPacket.TYPE, UpdateKeybindPacket.STREAM_CODEC);
     }
 
     /**
      * Registers client-side packet receivers.
      */
     public static void registerClientHandlers() {
-        // Client-side: receive sync packet
-        ClientPlayNetworking.registerGlobalReceiver(SYNC_KEYBINDS_ID, (client, handler, buf, responseSender) -> {
-            try {
-                SyncKeybindsPacket packet = CommonPacketCodec.decodeSyncKeybinds(buf);
-                client.execute(() -> {
-                    try {
-                        FabricKeybindPersistence.handleServerSync(packet.getKeybinds());
-                    } catch (Exception e) {
-                        LOGGER.error("Error handling sync packet", e);
-                    }
-                });
-            } catch (Exception e) {
-                LOGGER.error("Error decoding sync packet", e);
-            }
-        });
+        ClientPlayNetworking.registerGlobalReceiver(SyncKeybindsPacket.TYPE,
+            (packet, context) -> runLogged("handling sync packet",
+                () -> FabricKeybindPersistence.handleServerSync(packet.getKeybinds())));
     }
 
     /**
      * Registers server-side packet receivers.
      */
     public static void registerServerHandlers() {
-        // Server-side: receive add keybind packet
-        ServerPlayNetworking.registerGlobalReceiver(ADD_KEYBIND_ID, (server, player, handler, buf, responseSender) -> {
-            try {
-                AddKeybindPacket packet = CommonPacketCodec.decodeAddKeybind(buf);
-                server.submit(() -> {
-                    try {
-                        FabricServerKeybindHandler.handleAddKeybind(player, packet);
-                    } catch (Exception e) {
-                        LOGGER.error("Error handling add keybind packet", e);
-                    }
-                });
-            } catch (Exception e) {
-                LOGGER.error("Error decoding add keybind packet", e);
-            }
-        });
-
-        // Server-side: receive remove keybind packet
-        ServerPlayNetworking.registerGlobalReceiver(REMOVE_KEYBIND_ID, (server, player, handler, buf, responseSender) -> {
-            try {
-                RemoveKeybindPacket packet = CommonPacketCodec.decodeRemoveKeybind(buf);
-                server.submit(() -> {
-                    try {
-                        FabricServerKeybindHandler.handleRemoveKeybind(player, packet);
-                    } catch (Exception e) {
-                        LOGGER.error("Error handling remove keybind packet", e);
-                    }
-                });
-            } catch (Exception e) {
-                LOGGER.error("Error decoding remove keybind packet", e);
-            }
-        });
-
-        ServerPlayNetworking.registerGlobalReceiver(UPDATE_KEYBIND_ID, (server, player, handler, buf, responseSender) -> {
-            try {
-                UpdateKeybindPacket packet = CommonPacketCodec.decodeUpdateKeybind(buf);
-                server.submit(() -> {
-                    try {
-                        FabricServerKeybindHandler.handleUpdateKeybind(player, packet);
-                    } catch (Exception e) {
-                        LOGGER.error("Error handling update keybind packet", e);
-                    }
-                });
-            } catch (Exception e) {
-                LOGGER.error("Error decoding update keybind packet", e);
-            }
-        });
+        ServerPlayNetworking.registerGlobalReceiver(AddKeybindPacket.TYPE,
+            (packet, context) -> runLogged("handling add keybind packet",
+                () -> FabricServerKeybindHandler.handleAddKeybind(context.player(), packet)));
+        ServerPlayNetworking.registerGlobalReceiver(RemoveKeybindPacket.TYPE,
+            (packet, context) -> runLogged("handling remove keybind packet",
+                () -> FabricServerKeybindHandler.handleRemoveKeybind(context.player(), packet)));
+        ServerPlayNetworking.registerGlobalReceiver(UpdateKeybindPacket.TYPE,
+            (packet, context) -> runLogged("handling update keybind packet",
+                () -> FabricServerKeybindHandler.handleUpdateKeybind(context.player(), packet)));
     }
 
     /**
      * Sends a client add-keybind request packet.
      */
     public static void sendAddKeybindToServer(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
-        try {
-            FriendlyByteBuf buf = new FriendlyByteBuf(buffer());
-            CommonPacketCodec.encodeAddKeybind(new AddKeybindPacket(id, keyCode, category, action, displaySpec), buf);
-            ClientPlayNetworking.send(ADD_KEYBIND_ID, buf);
-        } catch (Exception e) {
-            LOGGER.error("Error sending add keybind packet", e);
-        }
+        runLogged("sending add keybind packet",
+            () -> ClientPlayNetworking.send(new AddKeybindPacket(id, keyCode, category, action, displaySpec)));
     }
 
     /**
      * Sends a client remove-keybind request packet.
      */
     public static void sendRemoveKeybindToServer(String id) {
-        try {
-            FriendlyByteBuf buf = new FriendlyByteBuf(buffer());
-            CommonPacketCodec.encodeRemoveKeybind(new RemoveKeybindPacket(id), buf);
-            ClientPlayNetworking.send(REMOVE_KEYBIND_ID, buf);
-        } catch (Exception e) {
-            LOGGER.error("Error sending remove keybind packet", e);
-        }
+        runLogged("sending remove keybind packet",
+            () -> ClientPlayNetworking.send(new RemoveKeybindPacket(id)));
     }
 
     /**
      * Sends a client update-keybind request packet.
      */
     public static void sendUpdateKeybindToServer(String id, int keyCode) {
-        try {
-            FriendlyByteBuf buf = new FriendlyByteBuf(buffer());
-            CommonPacketCodec.encodeUpdateKeybind(new UpdateKeybindPacket(id, keyCode), buf);
-            ClientPlayNetworking.send(UPDATE_KEYBIND_ID, buf);
-        } catch (Exception e) {
-            LOGGER.error("Error sending update keybind packet", e);
-        }
+        runLogged("sending update keybind packet",
+            () -> ClientPlayNetworking.send(new UpdateKeybindPacket(id, keyCode)));
     }
 
     /**
      * Sends a server sync packet containing all keybinds for a player.
      */
-    public static void sendSyncKeybindsToPlayer(net.minecraft.server.level.ServerPlayer player, java.util.List<StoredKeybind> keybinds) {
+    public static void sendSyncKeybindsToPlayer(ServerPlayer player, List<StoredKeybind> keybinds) {
+        runLogged("sending sync packet",
+            () -> ServerPlayNetworking.send(player, new SyncKeybindsPacket(keybinds)));
+    }
+
+    /**
+     * Runs a network action, logging failures instead of letting them disconnect the player.
+     */
+    private static void runLogged(String description, Runnable action) {
         try {
-            FriendlyByteBuf buf = new FriendlyByteBuf(buffer());
-            CommonPacketCodec.encodeSyncKeybinds(buf, keybinds);
-            ServerPlayNetworking.send(player, SYNC_KEYBINDS_ID, buf);
+            action.run();
         } catch (Exception e) {
-            LOGGER.error("Error sending sync packet", e);
+            LOGGER.error("Error {}", description, e);
         }
     }
 }
-

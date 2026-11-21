@@ -4,17 +4,11 @@ plugins {
     id "com.matthewprenger.cursegradle" version "1.4.0"
 }
 
-archivesBaseName = getArtifactId("forge")
+archivesBaseName = getArtifactId("neoforge")
 
 architectury {
     platformSetupLoomIde()
-    forge()
-}
-
-loom {
-    forge {
-        mixinConfig "dynamickeybinds-common.mixins.json"
-    }
+    neoForge()
 }
 
 configurations {
@@ -22,33 +16,23 @@ configurations {
     shadowCommon
     compileClasspath.extendsFrom common
     runtimeClasspath.extendsFrom common
-    developmentForge.extendsFrom common
+    developmentNeoForge.extendsFrom common
 }
 
 dependencies {
-    forge "net.minecraftforge:forge:${project.forgeVersion}"
-    modApi "dev.architectury:architectury-forge:${project.architecturyVersion}"
+    neoForge "net.neoforged:neoforge:${project.neoforgeVersion}"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive false }
 
     // For full online-mode testing
-    runtimeOnly 'me.djtheredstoner:DevAuth-forge-latest:1.2.1'
-
-    // modLocalRuntime "curse.maven:too-many-keybinds-1133683:6015488"
-}
-
-repositories {
-    exclusiveContent {
-        forRepository { maven { url "https://cursemaven.com" } }
-        filter { includeGroup "curse.maven" }
-    }
+    runtimeOnly 'me.djtheredstoner:DevAuth-neoforge:1.2.1'
 }
 
 processResources {
     inputs.property "version", project.version
 
-    filesMatching("META-INF/mods.toml") {
+    filesMatching("META-INF/neoforge.mods.toml") {
         expand "version": project.version
     }
 }
@@ -85,7 +69,7 @@ components.java {
 
 publishing {
     publications {
-        mavenForge(MavenPublication) {
+        mavenNeoForge(MavenPublication) {
             artifactId = project.archivesBaseName + "-" + project.name
             from components.java
         }
@@ -109,7 +93,7 @@ def changelogText = changelogOverride
 
 if (changelogText.isBlank() && changelogFile.exists()) {
     def changelogContents = changelogFile.getText("UTF-8")
-    def versionHeaderPattern = ~/(?m)^## \[\Q${project.version.toString()}\E\] - .*$/
+    def versionHeaderPattern = ~/(?m)^## \[\Q${project.modVersion}\E\] - .*$/
     def versionHeaderMatcher = versionHeaderPattern.matcher(changelogContents)
 
     if (versionHeaderMatcher.find()) {
@@ -142,12 +126,12 @@ if (!modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBl
         token = modrinthToken
         projectId = modrinthProjectId
         versionNumber = project.version.toString()
-        versionName = "${project.modID} ${project.version}-forge"
+        versionName = "${project.modID} ${project.version}-neoforge"
         versionType = publishReleaseType
         changelog = changelogText
         uploadFile = remapJar
         gameVersions = [project.minecraftVersion]
-        loaders = ["forge"]
+        loaders = ["neoforge"]
     }
 }
 
@@ -160,9 +144,11 @@ if (!curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToke
             changelogType = "markdown"
             releaseType = publishReleaseType
             addGameVersion project.minecraftVersion
-            addGameVersion "Forge"
+            addGameVersion "NeoForge"
+            addGameVersion "Client"
+            addGameVersion "Server"
             mainArtifact(remapJar.archiveFile.get().asFile) {
-                displayName = "${project.modID} ${project.version}-forge"
+                displayName = "${project.modID} ${project.version}-neoforge"
             }
         }
         options {
@@ -187,19 +173,19 @@ tasks.named("curseforge").configure {
 
 tasks.register("publishToModrinth") {
     group = "publishing"
-    description = "Uploads the Forge artifact to Modrinth."
+    description = "Uploads the NeoForge artifact to Modrinth."
     dependsOn tasks.named("modrinth")
 }
 
 tasks.register("publishToCurseForge") {
     group = "publishing"
-    description = "Uploads the Forge artifact to CurseForge."
+    description = "Uploads the NeoForge artifact to CurseForge."
     dependsOn tasks.named("curseforge")
 }
 
 tasks.register("publishToPlatforms") {
     group = "publishing"
-    description = "Uploads the Forge artifact to Modrinth and CurseForge."
+    description = "Uploads the NeoForge artifact to Modrinth and CurseForge."
     dependsOn tasks.named("publishToModrinth"), tasks.named("publishToCurseForge")
 }
 
@@ -207,7 +193,7 @@ tasks.register("printResolvedChangelog") {
     group = "publishing"
     description = "Prints the changelog text resolved for publishing."
     doLast {
-        println "Resolved changelog for ${project.modID} ${project.version} [Forge]:"
+        println "Resolved changelog for ${project.modID} ${project.version} [NeoForge]:"
         println "---"
         println changelogText
         println "---"
