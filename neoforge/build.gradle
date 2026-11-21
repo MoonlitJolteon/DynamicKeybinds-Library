@@ -1,7 +1,7 @@
 plugins {
     id "com.github.johnrengelman.shadow" version "7.1.2"
     id "com.modrinth.minotaur" version "2.+"
-    id "com.matthewprenger.cursegradle" version "1.4.0"
+    id "net.darkhax.curseforgegradle" version "1.1.28"
 }
 
 archivesBaseName = getArtifactId("neoforge")
@@ -135,25 +135,25 @@ if (!modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBl
     }
 }
 
-if (!curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToken.isBlank()) {
-    curseforge {
-        apiKey = curseforgeToken
-        project {
-            id = curseforgeProjectId
-            changelog = changelogText
-            changelogType = "markdown"
-            releaseType = publishReleaseType
-            addGameVersion project.minecraftVersion
-            addGameVersion "NeoForge"
-            addGameVersion "Client"
-            addGameVersion "Server"
-            mainArtifact(remapJar.archiveFile.get().asFile) {
-                displayName = "${project.modID} ${project.version}-neoforge"
-            }
-        }
-        options {
-            forgeGradleIntegration = false
-        }
+// CurseForge requires an environment tag (Client/Server), which the older cursegradle plugin can't send
+tasks.register("curseforge", net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+    dependsOn remapJar
+    onlyIf {
+        !curseforgeProjectId.isBlank() && !curseforgeToken.isBlank()
+    }
+
+    apiToken = curseforgeToken
+    disableVersionDetection()
+
+    if (!curseforgeProjectId.isBlank()) {
+        def mainFile = upload(curseforgeProjectId, remapJar)
+        mainFile.displayName = "${project.modID} ${project.version}-neoforge"
+        mainFile.changelog = changelogText
+        mainFile.changelogType = "markdown"
+        mainFile.releaseType = publishReleaseType
+        mainFile.addGameVersion(project.minecraftVersion)
+        mainFile.addModLoader("NeoForge")
+        mainFile.addEnvironment("Client", "Server")
     }
 }
 
@@ -161,13 +161,6 @@ tasks.named("modrinth").configure {
     dependsOn remapJar
     onlyIf {
         !modrinthProjectId.isBlank() && modrinthToken != null && !modrinthToken.isBlank()
-    }
-}
-
-tasks.named("curseforge").configure {
-    dependsOn remapJar
-    onlyIf {
-        !curseforgeProjectId.isBlank() && curseforgeToken != null && !curseforgeToken.isBlank()
     }
 }
 
