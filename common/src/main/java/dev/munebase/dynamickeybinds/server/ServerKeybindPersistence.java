@@ -2,6 +2,7 @@ package dev.munebase.dynamickeybinds.server;
 
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.model.DisplaySpec;
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -54,6 +55,9 @@ public final class ServerKeybindPersistence {
                 CompoundTag keybindTag = keybindsTag.getCompound(i);
                 String id = keybindTag.getString("id");
                 int keyCode = keybindTag.getInt("keyCode");
+                StoredKey key = keybindTag.contains("keyType")
+                    ? new StoredKey(keybindTag.getString("keyType"), keyCode)
+                    : StoredKey.legacy(keyCode);
                 String category = keybindTag.getString("category");
                 Optional<DynamicKeybindAction> action = Optional.empty();
                 if (keybindTag.contains("action")) {
@@ -66,7 +70,7 @@ public final class ServerKeybindPersistence {
                 if (keybindTag.contains("display")) {
                     displaySpec = DisplaySpec.fromNbt(keybindTag.getCompound("display"));
                 }
-                keybinds.add(new StoredKeybind(id, keyCode, category, action, displaySpec));
+                keybinds.add(new StoredKeybind(id, key, category, action, displaySpec));
             }
 
             LOGGER.info("Server: Loaded {} keybinds for player {}", keybinds.size(), playerUUID);
@@ -110,7 +114,8 @@ public final class ServerKeybindPersistence {
             for (StoredKeybind keybind : keybinds) {
                 CompoundTag keybindTag = new CompoundTag();
                 keybindTag.putString("id", keybind.id());
-                keybindTag.putInt("keyCode", keybind.keyCode());
+                keybindTag.putInt("keyCode", keybind.key().code());
+                keybindTag.putString("keyType", keybind.key().type());
                 keybindTag.putString("category", keybind.category());
                 if (keybind.action().isPresent()) {
                     DynamicKeybindAction action = keybind.action().get();

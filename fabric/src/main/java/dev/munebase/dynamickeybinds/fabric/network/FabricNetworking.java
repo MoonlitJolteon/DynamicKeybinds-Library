@@ -8,6 +8,7 @@ import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
 import dev.munebase.dynamickeybinds.network.SyncKeybindsPacket;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -83,9 +84,9 @@ public final class FabricNetworking {
     /**
      * Sends a client update-keybind request packet.
      */
-    public static void sendUpdateKeybindToServer(String id, int keyCode) {
+    public static void sendUpdateKeybindToServer(String id, StoredKey key) {
         runLogged("sending update keybind packet",
-            () -> ClientPlayNetworking.send(new UpdateKeybindPacket(id, keyCode)));
+            () -> ClientPlayNetworking.send(new UpdateKeybindPacket(id, key)));
     }
 
     /**

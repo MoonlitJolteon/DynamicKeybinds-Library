@@ -1,5 +1,6 @@
 package dev.munebase.dynamickeybinds.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryImpl;
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.model.DisplaySpec;
@@ -106,10 +107,15 @@ public final class NetworkedDynamicKeyRegistry implements ServerSynchronizedDyna
                 String cleanId = e.getKey();
                 StoredKeybind entry = e.getValue();
                 try {
+                    InputConstants.Key key = KeyMappingUtil.toKey(entry.key());
+                    if (key == InputConstants.UNKNOWN && entry.key().code() != -1) {
+                        // Keep the keybind (so the player can rebind it in Controls) rather than dropping it
+                        logger.warn("Invalid saved key {} for synced keybind {}, registering it unbound", entry.key(), cleanId);
+                    }
                     if (localRegistry.getKeyBindById(cleanId) != null) {
-                        keysChanged |= localRegistry.updateDynamicKey(cleanId, entry.keyCode(), entry.action(), entry.displaySpec());
+                        keysChanged |= localRegistry.updateDynamicKey(cleanId, key, entry.action(), entry.displaySpec());
                     } else {
-                        KeyMapping keyMapping = localRegistry.registerDynamicKey(cleanId, entry.keyCode(), entry.category(), entry.action(), entry.displaySpec());
+                        KeyMapping keyMapping = localRegistry.registerDynamicKey(cleanId, key, entry.category(), entry.action(), entry.displaySpec());
                         RuntimeKeyMappingManager.registerRuntimeKey(keyMapping, logger);
                     }
                 } catch (IllegalArgumentException ex) {

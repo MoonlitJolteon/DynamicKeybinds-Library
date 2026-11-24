@@ -8,6 +8,7 @@ import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
 import dev.munebase.dynamickeybinds.network.SyncKeybindsPacket;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -27,7 +28,7 @@ import java.util.Optional;
  */
 public final class NeoForgeNetworking {
     private static final Logger LOGGER = LoggerFactory.getLogger("DynamicKeybinds");
-    private static final String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "2";
 
     private NeoForgeNetworking() {
     }
@@ -72,9 +73,9 @@ public final class NeoForgeNetworking {
     /**
      * Sends a client update-keybind request packet.
      */
-    public static void sendUpdateKeybindToServer(String id, int keyCode) {
+    public static void sendUpdateKeybindToServer(String id, StoredKey key) {
         runLogged("sending update keybind packet",
-            () -> PacketDistributor.sendToServer(new UpdateKeybindPacket(id, keyCode)));
+            () -> PacketDistributor.sendToServer(new UpdateKeybindPacket(id, key)));
     }
 
     /**

@@ -87,16 +87,20 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
      */
     @Override
     public KeyMapping registerDynamicKey(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
+        if (!isValidKeyCode(keyCode)) {
+            throw new IllegalArgumentException("Invalid keycode: " + keyCode + ". Use GLFW key constants (e.g. 32-348).");
+        }
+        return registerDynamicKey(id, InputConstants.Type.KEYSYM.getOrCreate(keyCode), category, action, displaySpec);
+    }
+
+    /** Registers a key bound to any input type (keyboard, scancode or mouse button). */
+    public KeyMapping registerDynamicKey(String id, InputConstants.Key key, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
         if (keyBindingsById.containsKey(id)) {
             throw new IllegalArgumentException("Keybind with id '" + id + "' already exists");
         }
 
-        if (!isValidKeyCode(keyCode)) {
-            throw new IllegalArgumentException("Invalid keycode: " + keyCode + ". Use GLFW key constants (e.g. 32-348).");
-        }
-
         DisplaySpec safeDisplaySpec = displaySpec == null ? DisplaySpec.empty() : displaySpec;
-        KeyMapping keyMapping = new DynamicKeyMapping(id, keyCode, category, safeDisplaySpec);
+        KeyMapping keyMapping = new DynamicKeyMapping(id, key, category, safeDisplaySpec);
 
         keyBindingsById.put(id, keyMapping);
         actionsByKeyBinding.put(keyMapping, action);
@@ -113,20 +117,16 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
      * The category cannot change in place; unregister and re-register for that.
      *
      * @param id the keybind ID
-     * @param keyCode the new GLFW key code
+     * @param key the new bound input
      * @param action the new action
      * @param displaySpec the new display metadata
      * @return true if the bound key changed (caller should call {@link KeyMapping#resetMapping()})
-     * @throws IllegalArgumentException if the ID is not registered or keyCode is invalid
+     * @throws IllegalArgumentException if the ID is not registered
      */
-    public boolean updateDynamicKey(String id, int keyCode, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
+    public boolean updateDynamicKey(String id, InputConstants.Key key, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
         KeyMapping keyMapping = keyBindingsById.get(id);
         if (keyMapping == null) {
             throw new IllegalArgumentException("Keybind with id '" + id + "' is not registered");
-        }
-
-        if (!isValidKeyCode(keyCode)) {
-            throw new IllegalArgumentException("Invalid keycode: " + keyCode + ". Use GLFW key constants (e.g. 32-348).");
         }
 
         DisplaySpec safeDisplaySpec = displaySpec == null ? DisplaySpec.empty() : displaySpec;
@@ -136,10 +136,10 @@ public class DynamicKeyRegistryImpl implements DynamicKeyRegistry {
             dynamicKeyMapping.setDisplaySpec(safeDisplaySpec);
         }
 
-        if (KeyMappingUtil.extractKeyCode(keyMapping) == keyCode) {
+        if (keyMapping.saveString().equals(key.getName())) {
             return false;
         }
-        keyMapping.setKey(InputConstants.Type.KEYSYM.getOrCreate(keyCode));
+        keyMapping.setKey(key);
         return true;
     }
 
