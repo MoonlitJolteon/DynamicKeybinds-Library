@@ -139,7 +139,7 @@ public final class CommonServerKeybindHandler {
             for (int i = 0; i < keybinds.size(); i++) {
                 StoredKeybind keybind = keybinds.get(i);
                 if (keybind.id().equals(pkt.getId())) {
-                    keybinds.set(i, new StoredKeybind(keybind.id(), pkt.getKeyCode(), keybind.category(), keybind.action(), keybind.displaySpec()));
+                    keybinds.set(i, new StoredKeybind(keybind.id(), pkt.getKey(), keybind.category(), keybind.action(), keybind.displaySpec()));
                     updated = true;
                     break;
                 }

@@ -19,8 +19,8 @@ public final class ForgeKeybindPersistence {
     private static final CommonClientKeybindPersistence COMMON = new CommonClientKeybindPersistence(
         LOGGER,
         "Forge",
-        (id, keyCode) -> ForgeNetworking.CHANNEL.sendToServer(
-            new UpdateKeybindPacket(id, keyCode)
+        (id, key) -> ForgeNetworking.CHANNEL.sendToServer(
+            new UpdateKeybindPacket(id, key)
         )
     );
 

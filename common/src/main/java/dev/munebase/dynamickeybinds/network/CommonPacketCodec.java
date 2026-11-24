@@ -2,6 +2,7 @@ package dev.munebase.dynamickeybinds.network;
 
 import dev.munebase.dynamickeybinds.action.DynamicKeybindAction;
 import dev.munebase.dynamickeybinds.model.DisplaySpec;
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -27,11 +28,11 @@ public final class CommonPacketCodec {
         List<StoredKeybind> keybinds = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             String id = buf.readUtf();
-            int keyCode = buf.readInt();
+            StoredKey key = readKey(buf);
             String category = buf.readUtf();
             Optional<DynamicKeybindAction> action = readOptionalAction(buf);
             DisplaySpec displaySpec = readDisplaySpec(buf);
-            keybinds.add(new StoredKeybind(id, keyCode, category, action, displaySpec));
+            keybinds.add(new StoredKeybind(id, key, category, action, displaySpec));
         }
         return new SyncKeybindsPacket(keybinds);
     }
@@ -45,7 +46,7 @@ public final class CommonPacketCodec {
         buf.writeInt(keybinds.size());
         for (StoredKeybind keybind : keybinds) {
             buf.writeUtf(keybind.id());
-            buf.writeInt(keybind.keyCode());
+            writeKey(buf, keybind.key());
             buf.writeUtf(keybind.category());
             writeOptionalAction(buf, keybind.action());
             writeDisplaySpec(buf, keybind.displaySpec());
@@ -105,8 +106,7 @@ public final class CommonPacketCodec {
      */
     public static UpdateKeybindPacket decodeUpdateKeybind(FriendlyByteBuf buf) {
         String id = buf.readUtf();
-        int keyCode = buf.readInt();
-        return new UpdateKeybindPacket(id, keyCode);
+        return new UpdateKeybindPacket(id, readKey(buf));
     }
 
     /**
@@ -116,7 +116,16 @@ public final class CommonPacketCodec {
      */
     public static void encodeUpdateKeybind(UpdateKeybindPacket pkt, FriendlyByteBuf buf) {
         buf.writeUtf(pkt.getId());
-        buf.writeInt(pkt.getKeyCode());
+        writeKey(buf, pkt.getKey());
+    }
+
+    private static StoredKey readKey(FriendlyByteBuf buf) {
+        return new StoredKey(buf.readUtf(16), buf.readInt());
+    }
+
+    private static void writeKey(FriendlyByteBuf buf, StoredKey key) {
+        buf.writeUtf(key.type());
+        buf.writeInt(key.code());
     }
 
     private static Optional<DynamicKeybindAction> readOptionalAction(FriendlyByteBuf buf) {

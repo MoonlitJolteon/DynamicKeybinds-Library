@@ -1,6 +1,9 @@
 package dev.munebase.dynamickeybinds.util;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
 import net.minecraft.client.KeyMapping;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Shared key mapping helpers used across loaders.
@@ -39,6 +42,33 @@ public final class KeyMappingUtil {
             return "misc";
         }
         return category;
+    }
+
+    /**
+     * Converts a stored input to a game key, or {@link InputConstants#UNKNOWN} (unbound) if its type is
+     * unknown or its code is out of range for that type.
+     */
+    public static InputConstants.Key toKey(StoredKey stored) {
+        int code = stored.code();
+        return switch (stored.type()) {
+            case StoredKey.KEYSYM -> code == -1 || (code >= GLFW.GLFW_KEY_SPACE && code <= GLFW.GLFW_KEY_LAST)
+                ? InputConstants.Type.KEYSYM.getOrCreate(code) : InputConstants.UNKNOWN;
+            case StoredKey.MOUSE -> code >= 0 && code <= GLFW.GLFW_MOUSE_BUTTON_LAST
+                ? InputConstants.Type.MOUSE.getOrCreate(code) : InputConstants.UNKNOWN;
+            case StoredKey.SCANCODE -> code >= 0 ? InputConstants.Type.SCANCODE.getOrCreate(code) : InputConstants.UNKNOWN;
+            default -> InputConstants.UNKNOWN;
+        };
+    }
+
+    /** The input a key mapping is currently bound to, with its type. */
+    public static StoredKey toStored(KeyMapping keyMapping) {
+        InputConstants.Key key = InputConstants.getKey(keyMapping.saveString());
+        String type = switch (key.getType()) {
+            case MOUSE -> StoredKey.MOUSE;
+            case SCANCODE -> StoredKey.SCANCODE;
+            default -> StoredKey.KEYSYM;
+        };
+        return new StoredKey(type, key.getValue());
     }
 
     /**

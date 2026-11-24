@@ -2,6 +2,7 @@ package dev.munebase.dynamickeybinds.client;
 
 import dev.munebase.dynamickeybinds.DynamicKeyRegistry;
 import dev.munebase.dynamickeybinds.DynamicKeyRegistryProvider;
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import dev.munebase.dynamickeybinds.util.KeyMappingUtil;
 import net.minecraft.client.KeyMapping;
@@ -22,11 +23,11 @@ import java.util.function.BiConsumer;
 public final class CommonClientKeybindPersistence {
     private final Logger logger;
     private final String platformName;
-    private final BiConsumer<String, Integer> updateSender;
+    private final BiConsumer<String, StoredKey> updateSender;
 
     private String currentWorldPath;
     private String currentPlayerUUID;
-    private final Map<String, Integer> lastSyncedDynamicKeycodes = new HashMap<>();
+    private final Map<String, StoredKey> lastSyncedDynamicKeycodes = new HashMap<>();
 
     // Set when the Controls screen closes; other mods (e.g. TooManyKeybinds) temporarily rebind keys and must not be persisted
     private static volatile boolean rebindSyncRequested = false;
@@ -39,7 +40,7 @@ public final class CommonClientKeybindPersistence {
         rebindSyncRequested = true;
     }
 
-    public CommonClientKeybindPersistence(Logger logger, String platformName, BiConsumer<String, Integer> updateSender) {
+    public CommonClientKeybindPersistence(Logger logger, String platformName, BiConsumer<String, StoredKey> updateSender) {
         this.logger = logger;
         this.platformName = platformName;
         this.updateSender = updateSender;
@@ -77,14 +78,14 @@ public final class CommonClientKeybindPersistence {
                 if (id.isEmpty()) {
                     continue;
                 }
-                int keyCode = KeyMappingUtil.extractKeyCode(keyMapping);
-                Integer previous = lastSyncedDynamicKeycodes.get(id.get());
+                StoredKey key = KeyMappingUtil.toStored(keyMapping);
+                StoredKey previous = lastSyncedDynamicKeycodes.get(id.get());
                 if (previous == null) {
                     continue;
                 }
-                if (previous != keyCode) {
-                    updateSender.accept(id.get(), keyCode);
-                    lastSyncedDynamicKeycodes.put(id.get(), keyCode);
+                if (!previous.equals(key)) {
+                    updateSender.accept(id.get(), key);
+                    lastSyncedDynamicKeycodes.put(id.get(), key);
                 }
             }
         } catch (Exception e) {
@@ -138,7 +139,7 @@ public final class CommonClientKeybindPersistence {
         for (KeyMapping keyMapping : registry.getAllDynamicKeys()) {
             Optional<String> id = registry.getKeyBindId(keyMapping);
             if (id.isPresent()) {
-                lastSyncedDynamicKeycodes.put(id.get(), KeyMappingUtil.extractKeyCode(keyMapping));
+                lastSyncedDynamicKeycodes.put(id.get(), KeyMappingUtil.toStored(keyMapping));
             }
         }
     }

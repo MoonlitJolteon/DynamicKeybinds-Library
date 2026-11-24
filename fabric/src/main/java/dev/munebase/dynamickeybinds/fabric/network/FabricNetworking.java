@@ -9,6 +9,7 @@ import dev.munebase.dynamickeybinds.network.AddKeybindPacket;
 import dev.munebase.dynamickeybinds.network.CommonPacketCodec;
 import dev.munebase.dynamickeybinds.network.RemoveKeybindPacket;
 import dev.munebase.dynamickeybinds.network.UpdateKeybindPacket;
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
 import dev.munebase.dynamickeybinds.persistence.StoredKeybind;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -139,10 +140,10 @@ public final class FabricNetworking {
     /**
      * Sends a client update-keybind request packet.
      */
-    public static void sendUpdateKeybindToServer(String id, int keyCode) {
+    public static void sendUpdateKeybindToServer(String id, StoredKey key) {
         try {
             FriendlyByteBuf buf = new FriendlyByteBuf(buffer());
-            CommonPacketCodec.encodeUpdateKeybind(new UpdateKeybindPacket(id, keyCode), buf);
+            CommonPacketCodec.encodeUpdateKeybind(new UpdateKeybindPacket(id, key), buf);
             ClientPlayNetworking.send(UPDATE_KEYBIND_ID, buf);
         } catch (Exception e) {
             LOGGER.error("Error sending update keybind packet", e);

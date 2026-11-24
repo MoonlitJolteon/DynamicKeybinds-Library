@@ -27,7 +27,7 @@ import java.util.Optional;
  */
 public final class ForgeNetworking {
     private static final Logger LOGGER = LoggerFactory.getLogger("DynamicKeybinds");
-    public static final String PROTOCOL_VERSION = "1";
+    public static final String PROTOCOL_VERSION = "2";
     public static SimpleChannel CHANNEL = null;
     private static int packetId = 0;
 

@@ -41,13 +41,18 @@ import java.util.Optional;
  * </pre>
  *
  * @param id unique identifier for the keybind (e.g., "mymod:ability_cast")
- * @param keyCode the GLFW key code (numeric value 32-348)
+ * @param key the bound input (type + code); mouse buttons and keyboard keys are distinguished by type
  * @param category the keybind category for menu organization
  * @param action optional custom action that will be triggered when the key is pressed.
  *               If empty, the keybind can still be used but won't trigger any special behavior
  * @param displaySpec optional display metadata for the keybind label. If empty, uses default display.
  */
-public record StoredKeybind(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
+public record StoredKeybind(String id, StoredKey key, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
+    /** The GLFW keyboard key code (convenience for keyboard-only callers). */
+    public StoredKeybind(String id, int keyCode, String category, Optional<DynamicKeybindAction> action, DisplaySpec displaySpec) {
+        this(id, StoredKey.keysym(keyCode), category, action, displaySpec);
+    }
+
     /**
      * Backward-compatible constructor for keybinds without custom actions or display.
      *
@@ -56,7 +61,7 @@ public record StoredKeybind(String id, int keyCode, String category, Optional<Dy
      * @param category the keybind category
      */
     public StoredKeybind(String id, int keyCode, String category) {
-        this(id, keyCode, category, Optional.empty(), DisplaySpec.empty());
+        this(id, StoredKey.keysym(keyCode), category, Optional.empty(), DisplaySpec.empty());
     }
     
     /**
@@ -68,6 +73,6 @@ public record StoredKeybind(String id, int keyCode, String category, Optional<Dy
      * @param action the optional action
      */
     public StoredKeybind(String id, int keyCode, String category, Optional<DynamicKeybindAction> action) {
-        this(id, keyCode, category, action, DisplaySpec.empty());
+        this(id, StoredKey.keysym(keyCode), category, action, DisplaySpec.empty());
     }
 }

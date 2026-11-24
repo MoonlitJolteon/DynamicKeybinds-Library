@@ -1,5 +1,7 @@
 package dev.munebase.dynamickeybinds.network;
 
+import dev.munebase.dynamickeybinds.persistence.StoredKey;
+
 /**
  * Network packet sent from client to server to request updating a keybind's key code.
  * 
@@ -14,18 +16,18 @@ public class UpdateKeybindPacket {
     /** ID of the keybind to update */
     private final String id;
     
-    /** New GLFW key code for this keybind */
-    private final int keyCode;
+    /** New input (type + code) for this keybind */
+    private final StoredKey key;
 
     /**
      * Construct a new UpdateKeybindPacket.
      *
      * @param id the keybind ID to update
-     * @param keyCode the new GLFW key code
+     * @param key the new input
      */
-    public UpdateKeybindPacket(String id, int keyCode) {
+    public UpdateKeybindPacket(String id, StoredKey key) {
         this.id = id;
-        this.keyCode = keyCode;
+        this.key = key;
     }
 
     /**
@@ -38,11 +40,11 @@ public class UpdateKeybindPacket {
     }
 
     /**
-     * Get the new key code.
+     * Get the new input.
      *
-     * @return the new GLFW key code
+     * @return the new input
      */
-    public int getKeyCode() {
-        return keyCode;
+    public StoredKey getKey() {
+        return key;
     }
 }
